@@ -145,6 +145,10 @@ When both a `$wildcard` rule and a specific named rule match a node, both are ev
 
 Reads to `message1` are denied because the specific `message1` rule evaluates to `false`, even though the `$message` wildcard rule is `true`.
 
+## Volatile path restrictions
+
+[Volatile paths](/platform/volatile) support `.read`, `.write`, and `.validate` rules, but those rules cannot reference `data` or `root` — reading existing database state is incompatible with the volatile fast path. If a rule on a volatile path contains `data.*` or `root.*`, it evaluates to `false`. See [volatile paths](/platform/volatile#rules-restrictions-on-volatile-paths) for the full list of what's allowed.
+
 ## Editing rules
 
 You edit your security rules in the Lark dashboard. Go to **Project Settings > Security Rules**, paste or edit your JSON, and click **Publish**. Rules take effect immediately across all connected clients.

@@ -28,6 +28,7 @@ db.ref('cursors/alice').set({
 | | Regular writes | Volatile writes |
 |---|---|---|
 | **Acknowledgment** | Server confirms the write | Resolves immediately, no server ack |
+| **Denials** | Server sends an error the client can handle | Silently dropped |
 | **Delivery** | Reliable, ordered | Best-effort, latest-value-wins |
 | **Persistence** | Written to durable storage | Not persisted — in-memory only |
 | **Broadcast** | Every change is sent to subscribers | Batched and coalesced before broadcast |
@@ -44,7 +45,7 @@ The server broadcasts volatile updates at fixed intervals:
 - **WebTransport clients**: ~20 Hz (every 50ms). At most 20 volatile updates per second reach each subscriber.
 - **WebSocket clients**: ~7 Hz (every 150ms). Slower than WebTransport due to TCP overhead, but still fast enough for smooth updates.
 
-This means if you're writing cursor positions 60 times per second, a WebTransport subscriber sees ~20 updates per second and a WebSocket subscriber sees ~4. In both cases, they always get the latest value — not a delayed queue of old positions.
+We recommend tuning the frequency at which you write to volatile paths to match the transport the client is connected on. For example, on WebSocket you might write 10 times per second, while on WebTransport you could write 20 times per second.
 
 ## Size limit
 
@@ -73,6 +74,16 @@ Mark a path as volatile by adding `".volatile": true` in your [security rules](/
 ```
 
 Any path under a `.volatile` rule automatically uses volatile delivery. You don't need to change your write code — the same `set()` and `update()` calls just behave differently under the hood.
+
+### Rules restrictions on volatile paths
+
+Volatile paths support `.read`, `.write`, and `.validate` rules, but they must be **simple rules** — rules that don't reference existing database state. Specifically, a rule on a volatile path cannot contain `data.` or `root.` anywhere in the expression. These require reading current state from storage, which is incompatible with the volatile fast path.
+
+Any rule variable that doesn't require reading existing state — `auth`, `newData`, `$wildcards`, `now`, literals, and operators — works fine. The two that don't work are `data` and `root`, since both require reading current database state.
+
+<Warning>
+If a volatile path has a rule that references `data` or `root`, the rule evaluates to `false` — the read or write is silently denied. There's no error message; the operation just fails. Make sure your volatile path rules only use the allowed variables listed above.
+</Warning>
 
 ## Volatile snapshots
 
@@ -118,3 +129,14 @@ Volatile paths are the right choice when:
 <Info>
 Volatile data is not persisted to disk — it lives in memory only. If the server restarts, volatile data is gone. This is by design — volatile paths are for ephemeral, high-frequency data where the next update is always right behind the current one.
 </Info>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Transports" icon="network-wired" href="/platform/transports">
+    WebSocket vs WebTransport — how volatile data benefits from UDP datagrams.
+  </Card>
+  <Card title="Limits" icon="gauge-high" href="/platform/limits">
+    Size limits and rate limits, including volatile exceptions.
+  </Card>
+</CardGroup>

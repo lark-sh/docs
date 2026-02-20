@@ -64,3 +64,20 @@ A few things to double-check before you go live:
 - **Auto-create** — If you're using [database routing](/firebase/database-routing) to split data into separate databases, enable auto-create so Lark creates databases on first connect.
 - **Security rules** — Test your rules in Lark's rules editor before going live. The syntax is the same, but it's worth verifying that everything was copied correctly.
 - **Volatile paths** — If you have high-frequency data like cursor positions or player movement, consider configuring [volatile paths](/platform/volatile). Firebase SDK clients fully support volatile updates — Lark batches them on the server and delivers them as `PATCH` events that the Firebase SDK handles natively. You just need to define the volatile path patterns in your project settings.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Compatibility notes" icon="circle-check" href="/firebase/compatibility">
+    Full list of what's supported and any differences.
+  </Card>
+  <Card title="Database routing" icon="route" href="/firebase/database-routing">
+    Split your single Firebase database into multiple Lark databases.
+  </Card>
+  <Card title="Firebase Auth with Lark" icon="lock" href="/firebase/auth">
+    Keep using Firebase Auth tokens with Lark.
+  </Card>
+  <Card title="Volatile paths" icon="bolt" href="/platform/volatile">
+    Add high-frequency updates to your migrated app.
+  </Card>
+</CardGroup>

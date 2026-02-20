@@ -106,3 +106,20 @@ curl -X POST \
 curl -X DELETE \
   'https://chess-app.larkdb.net/my-game/players/alice.json?auth=YOUR_TOKEN'
 ```
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Reading data" icon="book-open" href="/rest-api/reading">
+    GET requests, shallow reads, queries, and formatting options.
+  </Card>
+  <Card title="Writing data" icon="pen" href="/rest-api/writing">
+    PUT, POST, PATCH, DELETE, multi-path updates, and server values.
+  </Card>
+  <Card title="Streaming" icon="signal-stream" href="/rest-api/streaming">
+    Server-Sent Events for real-time updates over HTTP.
+  </Card>
+  <Card title="Conditional requests" icon="code-compare" href="/rest-api/conditional">
+    ETags and compare-and-swap for safe concurrent writes.
+  </Card>
+</CardGroup>
