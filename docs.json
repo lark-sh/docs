@@ -90,8 +90,24 @@
             "group": "Guides",
             "pages": [
               "firebase/auth",
+              "firebase/database-routing",
               "firebase/migration",
               "firebase/compatibility"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "REST API",
+        "groups": [
+          {
+            "group": "REST API",
+            "pages": [
+              "rest-api/overview",
+              "rest-api/reading",
+              "rest-api/writing",
+              "rest-api/streaming",
+              "rest-api/conditional"
             ]
           }
         ]
@@ -149,7 +165,7 @@
     "links": [
       {
         "label": "Dashboard",
-        "href": "https://admin.larkdb.net"
+        "href": "https://dashboard.lark.sh"
       }
     ]
   },

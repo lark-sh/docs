@@ -9,11 +9,6 @@ Authentication tells Lark who is making a request. Once a client is authenticate
 
 The simplest way to connect. No credentials, no tokens. The client connects and starts reading and writing immediately.
 
-```typescript
-const db = new LarkDatabase('my-project/my-database');
-// Connected — auth is null
-```
-
 In security rules, `auth` will be `null` for anonymous clients. You can allow anonymous access where appropriate:
 
 ```json
@@ -66,20 +61,7 @@ function createLarkToken(uid: string, claims?: Record<string, any>) {
 const token = createLarkToken('alice', { role: 'admin', teamId: 'team-42' });
 ```
 
-### Authenticating on the client
-
-Pass the token when connecting or call `signIn` after connecting:
-
-```typescript
-// Option 1: Authenticate on connect
-const db = new LarkDatabase('my-project/my-database', {
-  token: token
-});
-
-// Option 2: Authenticate after connecting
-const db = new LarkDatabase('my-project/my-database');
-await db.signIn(token);
-```
+### The `auth` object in security rules
 
 Once authenticated, the `auth` object in security rules contains the token's payload:
 
@@ -133,17 +115,13 @@ Here's the full authentication flow:
 6. Lark validates the JWT signature against your project's secret key.
 7. If valid, the `auth` object is populated for all security rule evaluations on this connection.
 
-```
-User logs in → Your backend → Generates JWT → Client → Lark validates → auth is set
-```
-
 <Note>
 Lark doesn't manage user accounts or passwords. It trusts whatever identity your backend puts in the JWT. This gives you full flexibility — use any auth provider, any user store, any login flow you want.
 </Note>
 
 ## Secret key management
 
-Your project's secret key is available in the [Lark dashboard](https://admin.larkdb.net) under **Project Settings > Secret Key**.
+Your project's secret key is available in the [Lark dashboard](https://dashboard.lark.sh) under **Project Settings > Secret Key**.
 
 A few important rules:
 
@@ -158,3 +136,14 @@ If your secret key leaks, anyone can generate valid tokens with any `uid` and an
 ## Firebase Auth compatibility
 
 If you're using Lark with Firebase SDKs, Lark also accepts Firebase Auth tokens. Your existing Firebase authentication flow works without changes. See the [Firebase Auth guide](/firebase/auth) for details on configuring this.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Lark SDK authentication" icon="code" href="/lark-sdk/auth">
+    Connect, sign in, sign out, and listen for auth changes with the Lark SDK.
+  </Card>
+  <Card title="REST API authentication" icon="globe" href="/rest-api/overview#authentication">
+    Pass auth tokens in REST API requests.
+  </Card>
+</CardGroup>

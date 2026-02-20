@@ -27,8 +27,8 @@ When enabled, databases are created automatically the first time a client connec
 
 Enables compatibility with existing Firebase Realtime Database SDKs. When you toggle this on, two additional options appear:
 
-- **Use First Path as Database**: Routes clients by their first path segment. For example, a write to `/room-123/players/alice` goes to a database named `room-123` at path `/players/alice`. This is useful for Firebase apps that used a single database with path-based sharding.
-- **Firebase Auth Project ID**: Your Firebase project ID, used to validate Firebase Auth tokens (RS256 JWTs). Set this if your users authenticate through Firebase Auth.
+- **Use First Path as Database**: Routes clients by their first path segment. For example, a write to `/room-123/players/alice` goes to a database named `room-123` at path `/players/alice`. See [Database routing](/firebase/database-routing) for when and why to use this.
+- **Firebase Auth Project ID**: Your Firebase project ID, used to validate Firebase Auth tokens. Set this if your users authenticate through Firebase Auth.
 
 ## Secret key
 

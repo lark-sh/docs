@@ -1,0 +1,117 @@
+---
+title: "Streaming"
+description: "Subscribe to real-time updates with Server-Sent Events"
+---
+
+The REST API supports Server-Sent Events (SSE) for real-time streaming. Send a `GET` request with `Accept: text/event-stream` and Lark pushes data changes to you as they happen.
+
+## Starting a stream
+
+```bash
+curl -N \
+  -H 'Accept: text/event-stream' \
+  'https://chess-app.larkdb.net/my-game/players.json?auth=YOUR_TOKEN'
+```
+
+The `-N` flag disables curl's output buffering so events appear immediately.
+
+## Event format
+
+Events follow the [SSE specification](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events). Each event has a type and a JSON data payload:
+
+```
+event: put
+data: {"path":"/","data":{"alice":{"name":"Alice","score":250},"bob":{"name":"Bob","score":180}}}
+
+event: patch
+data: {"path":"/alice/score","data":300}
+
+event: put
+data: {"path":"/carol","data":{"name":"Carol","score":0}}
+```
+
+### Event types
+
+| Event | Description |
+|---|---|
+| `put` | Data at the path was replaced. The initial event is always a `put` with the full value at the subscribed path. |
+| `patch` | Data was partially updated. Only the changed fields are included. |
+| `keep-alive` | Sent periodically to keep the connection open. No data payload. |
+| `cancel` | The stream was terminated — typically because security rules revoked read access. |
+| `auth_revoked` | The auth token expired or was invalidated. |
+
+### Initial data
+
+The first event on any stream is a `put` containing the complete current value at the path:
+
+```
+event: put
+data: {"path":"/","data":{"alice":{"name":"Alice","score":250},"bob":{"name":"Bob","score":180}}}
+```
+
+After that, you receive incremental `put` and `patch` events as data changes.
+
+## Path semantics
+
+The `path` field in each event is relative to the path you subscribed to. If you stream `/players`:
+
+- `{"path":"/","data":{...}}` — The entire `/players` subtree changed.
+- `{"path":"/alice/score","data":300}` — Only `/players/alice/score` changed.
+- `{"path":"/carol","data":{"name":"Carol","score":0}}` — A new child `/players/carol` was added.
+
+## Using SSE in code
+
+### Browser (EventSource)
+
+```typescript
+const url = 'https://chess-app.larkdb.net/my-game/players.json?auth=YOUR_TOKEN';
+const source = new EventSource(url);
+
+source.addEventListener('put', (e) => {
+  const { path, data } = JSON.parse(e.data);
+  console.log('PUT at', path, data);
+});
+
+source.addEventListener('patch', (e) => {
+  const { path, data } = JSON.parse(e.data);
+  console.log('PATCH at', path, data);
+});
+
+source.addEventListener('cancel', () => {
+  console.log('Stream cancelled — check security rules');
+  source.close();
+});
+```
+
+### Node.js
+
+Use any SSE client library, or read the stream manually:
+
+```typescript
+const response = await fetch(
+  'https://chess-app.larkdb.net/my-game/players.json?auth=YOUR_TOKEN',
+  { headers: { 'Accept': 'text/event-stream' } }
+);
+
+const reader = response.body!.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+
+  const text = decoder.decode(value);
+  // Parse SSE events from text
+  console.log(text);
+}
+```
+
+## When to use streaming
+
+SSE streaming is useful when you need real-time updates but can't use a WebSocket-based SDK:
+
+- **Server-side listeners** — Watch for changes from a backend service.
+- **Monitoring and logging** — Stream events to a log pipeline.
+- **Simple web clients** — `EventSource` is built into every browser with no dependencies.
+
+For most client-side applications, the [Lark SDK](/lark-sdk/overview) or [Firebase SDKs](/firebase/overview) provide a better developer experience with automatic reconnection, local caching, and typed snapshots.

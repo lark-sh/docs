@@ -7,45 +7,16 @@ Knowing when users are online and offline is essential for multiplayer games, co
 
 ## OnDisconnect
 
-`onDisconnect()` lets you register operations that run on the server the moment a client disconnects. You set them up while connected, and the server holds onto them. When the connection drops, the server executes them immediately.
-
-```typescript
-const userRef = db.ref('users/alice');
-
-// When Alice disconnects, set her status to offline
-userRef.child('online').onDisconnect().set(false);
-userRef.child('lastSeen').onDisconnect().set(ServerValue.TIMESTAMP);
-```
-
-The server queues these operations and executes them as soon as it detects the connection is gone. Your other clients will see Alice go offline within seconds of her closing the tab or losing network.
+OnDisconnect lets you register operations that run on the server the moment a client disconnects. You set them up while connected, and the server holds onto them. When the connection drops — whether the user closes the tab, the network fails, or the device crashes — the server executes them immediately.
 
 ### Available operations
 
 OnDisconnect supports the same write operations you use elsewhere:
 
-- **`set(value)`** — Overwrite the data at the path.
-- **`update(values)`** — Merge values into the existing data.
-- **`remove()`** — Delete the data at the path.
-- **`cancel()`** — Cancel any previously queued onDisconnect operations for this path.
-
-```typescript
-const userRef = db.ref('users/alice');
-
-// Set a single value
-userRef.child('online').onDisconnect().set(false);
-
-// Update multiple fields at once
-userRef.onDisconnect().update({
-  online: false,
-  lastSeen: ServerValue.TIMESTAMP
-});
-
-// Remove the user entirely
-userRef.onDisconnect().remove();
-
-// Changed your mind — cancel the queued operations
-userRef.onDisconnect().cancel();
-```
+- **set** — Overwrite the data at the path.
+- **update** — Merge values into the existing data.
+- **remove** — Delete the data at the path.
+- **cancel** — Cancel any previously queued OnDisconnect operations for this path.
 
 <Note>
 OnDisconnect operations survive brief network interruptions. The server only executes them when it confirms the connection is truly gone — not on every momentary blip. If the client reconnects before the server times out the connection, the disconnect operations remain queued and are not fired.
@@ -55,87 +26,28 @@ OnDisconnect operations survive brief network interruptions. The server only exe
 
 Lark provides a special read-only path, `.info/connected`, that tells you whether the client is currently connected to the server. It's `true` when connected and `false` when disconnected.
 
-```typescript
-db.ref('.info/connected').on('value', (snapshot) => {
-  if (snapshot.val() === true) {
-    console.log('Connected to Lark');
-  } else {
-    console.log('Disconnected from Lark');
-  }
-});
-```
-
-This is a local-only value maintained by the SDK. Subscribe to it to show a connection indicator in your UI — a banner, an icon, a "reconnecting..." message.
+Subscribe to it to show a connection indicator in your UI — a banner, an icon, a "reconnecting..." message.
 
 ## Building a presence system
 
-Here's the classic pattern for a full presence system. It combines `onDisconnect`, `.info/connected`, and regular writes to reliably track who's online.
+The classic pattern for presence combines OnDisconnect, `.info/connected`, and regular writes:
 
-```typescript
-const myUid = 'alice'; // from your auth system
-const userStatusRef = db.ref(`users/${myUid}/status`);
-
-db.ref('.info/connected').on('value', (snapshot) => {
-  // If we're not connected, don't do anything
-  if (snapshot.val() !== true) {
-    return;
-  }
-
-  // When this client disconnects, update the status
-  userStatusRef.onDisconnect().set({
-    online: false,
-    lastSeen: ServerValue.TIMESTAMP
-  }).then(() => {
-    // onDisconnect is queued on the server — now set our status to online
-    userStatusRef.set({
-      online: true,
-      lastSeen: ServerValue.TIMESTAMP
-    });
-  });
-});
-```
-
-Here's what happens step by step:
-
-1. The client subscribes to `.info/connected`.
-2. When the connection is established (or re-established), the callback fires with `true`.
-3. The client registers an `onDisconnect` to set the user offline and write a `lastSeen` timestamp.
-4. Once the `onDisconnect` is confirmed queued on the server, the client sets the user online.
-5. If the connection drops, the server executes the `onDisconnect` — setting the user offline and recording when they were last seen.
-6. When the client reconnects, the cycle repeats.
+1. Subscribe to `.info/connected`.
+2. When the connection is established (or re-established), register an OnDisconnect to set the user offline and write a `lastSeen` timestamp.
+3. Once the OnDisconnect is confirmed queued on the server, set the user online.
+4. If the connection drops, the server executes the OnDisconnect — setting the user offline.
+5. When the client reconnects, the cycle repeats.
 
 <Tip>
-The order matters. Always register your `onDisconnect` before setting the online status. If you did it the other way around and the connection dropped between the two operations, the user would appear online forever with no disconnect handler to clean up.
+The order matters. Always register your OnDisconnect **before** setting the online status. If you did it the other way around and the connection dropped between the two operations, the user would appear online forever with no disconnect handler to clean up.
 </Tip>
 
-## Watching other users
+### Multiple connections per user
 
-Once your presence system is in place, any client can subscribe to another user's status:
+OnDisconnect operations are tied to a specific connection. If a user opens your app in two tabs, each tab has its own connection and its own OnDisconnect handlers. Closing one tab fires that tab's disconnect operations — potentially setting the user offline while they're still active in the other tab. Design your presence data model to handle this if needed (for example, by tracking connection count instead of a boolean).
 
-```typescript
-db.ref('users/bob/status').on('value', (snapshot) => {
-  const status = snapshot.val();
-  if (status?.online) {
-    showOnlineIndicator('bob');
-  } else {
-    showOfflineIndicator('bob', status?.lastSeen);
-  }
-});
-```
+## Next steps
 
-Or watch the entire user list to build a "who's online" panel:
-
-```typescript
-db.ref('users').orderByChild('status/online').equalTo(true)
-  .on('value', (snapshot) => {
-    const onlineUsers = [];
-    snapshot.forEach((child) => {
-      onlineUsers.push(child.key);
-    });
-    renderOnlineList(onlineUsers);
-  });
-```
-
-<Warning>
-OnDisconnect operations are tied to a specific connection. If a user opens your app in two tabs, each tab has its own connection and its own onDisconnect handlers. Closing one tab will fire that tab's disconnect operations — potentially setting the user offline while they're still active in the other tab. Design your presence data model to handle multiple connections per user if needed.
-</Warning>
+<Card title="Lark SDK OnDisconnect" icon="code" href="/lark-sdk/ondisconnect">
+  Full API reference and code examples for OnDisconnect and presence in the Lark SDK.
+</Card>

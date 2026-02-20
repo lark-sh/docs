@@ -1,0 +1,108 @@
+---
+title: "REST API"
+description: "Read and write data over HTTP — no SDK required"
+---
+
+Lark exposes a REST API for reading and writing data over plain HTTP. If you're working from a server, a script, a CLI tool, or any environment where you don't want to maintain a persistent connection, the REST API is the way to go.
+
+The REST API is fully compatible with the [Firebase Realtime Database REST API](https://firebase.google.com/docs/reference/rest/database). If you have existing code that hits Firebase's `/.json` endpoints, it works with Lark by changing the hostname.
+
+## URL format
+
+Every REST request targets a path in your database, with `.json` appended:
+
+```
+https://{projectId}.larkdb.net/{database}/{path}.json
+```
+
+For example, to access `/players/alice` in the `my-game` database of project `chess-app`:
+
+```
+https://chess-app.larkdb.net/my-game/players/alice.json
+```
+
+The root of a database:
+
+```
+https://chess-app.larkdb.net/my-game/.json
+```
+
+### Database-in-subdomain format
+
+You can also specify the database as part of the subdomain using `--`:
+
+```
+https://{database}--{projectId}.larkdb.net/{path}.json
+```
+
+```
+https://my-game--chess-app.larkdb.net/players/alice.json
+```
+
+<Tip>The database-in-subdomain format is useful when you want cleaner paths or need to match Firebase's URL structure more closely.</Tip>
+
+## Authentication
+
+Pass an auth token as a query parameter:
+
+```
+GET https://chess-app.larkdb.net/my-game/players.json?auth=YOUR_TOKEN
+```
+
+The `auth` parameter accepts any token that Lark supports — [Lark tokens](/platform/authentication) (HS256 JWTs signed with your secret key) or [Firebase Auth tokens](/firebase/auth).
+
+You can also use `access_token` as an alias:
+
+```
+GET https://chess-app.larkdb.net/my-game/players.json?access_token=YOUR_TOKEN
+```
+
+If you omit the token, the request is treated as anonymous. Your [security rules](/platform/security-rules) determine what anonymous clients can access.
+
+## Operations at a glance
+
+| HTTP method | Operation | Description |
+|---|---|---|
+| `GET` | Read | Fetch data at a path |
+| `PUT` | Set | Replace data at a path |
+| `POST` | Push | Add a child with an auto-generated key |
+| `PATCH` | Update | Merge data at a path |
+| `DELETE` | Remove | Delete data at a path |
+
+## When to use the REST API
+
+- **Server-side operations** — Read or write data from your backend without maintaining a WebSocket connection.
+- **One-off scripts** — Import data, seed a database, or run migrations.
+- **Webhooks and integrations** — Receive a webhook, write to Lark with a single HTTP call.
+- **Environments without WebSocket support** — Edge functions, serverless workers, or constrained runtimes.
+- **Debugging** — Quick reads with `curl` to inspect your data.
+
+For real-time subscriptions and persistent connections, use the [Lark SDK](/lark-sdk/overview) or [Firebase SDKs](/firebase/overview) instead.
+
+## Quick example
+
+```bash
+# Write data
+curl -X PUT \
+  'https://chess-app.larkdb.net/my-game/players/alice.json?auth=YOUR_TOKEN' \
+  -d '{"name": "Alice", "score": 0}'
+
+# Read it back
+curl 'https://chess-app.larkdb.net/my-game/players/alice.json?auth=YOUR_TOKEN'
+# {"name":"Alice","score":0}
+
+# Update a single field
+curl -X PATCH \
+  'https://chess-app.larkdb.net/my-game/players/alice.json?auth=YOUR_TOKEN' \
+  -d '{"score": 42}'
+
+# Push a new child with auto-generated key
+curl -X POST \
+  'https://chess-app.larkdb.net/my-game/messages.json?auth=YOUR_TOKEN' \
+  -d '{"text": "Hello!", "sender": "alice"}'
+# {"name":"-Kabc123xyz"}
+
+# Delete data
+curl -X DELETE \
+  'https://chess-app.larkdb.net/my-game/players/alice.json?auth=YOUR_TOKEN'
+```

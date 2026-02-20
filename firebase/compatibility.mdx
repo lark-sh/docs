@@ -33,9 +33,11 @@ A few things work differently in Lark:
 
 You connect to `your-project-id.larkdb.net` instead of `your-project.firebaseio.com`. This is the only required code change.
 
-### No Firebase REST API
+### Firebase REST API
 
-Lark doesn't expose a REST API for database operations. If your backend uses `https://your-project.firebaseio.com/path.json` to read or write data, you'll need to switch to the SDK or use the Lark dashboard.
+Lark's REST API is fully compatible with the Firebase Realtime Database REST API. If your backend uses `https://your-project.firebaseio.com/path.json`, change the hostname to `your-project-id.larkdb.net` and it works the same way — `GET`, `PUT`, `POST`, `PATCH`, `DELETE`, query parameters, ETags, and Server-Sent Events streaming are all supported.
+
+See the [REST API documentation](/rest-api/overview) for full details.
 
 ### No Firebase CLI integration
 
@@ -54,7 +56,7 @@ Even when using Firebase SDKs, you benefit from Lark's server-side features auto
 - **Volatile path batching** — Updates to volatile paths are batched for efficiency.
 - **Shared view optimization** — When multiple clients subscribe to the same path, Lark optimizes the server-side work.
 - **Lower latency** — Sub-50ms p99 latency for reads and writes.
-- **CCU-based pricing** — No per-operation charges.
+
 
 To use Lark's client-side features like WebTransport or the streamlined API, switch to the [Lark SDK](/lark-sdk/overview).
 

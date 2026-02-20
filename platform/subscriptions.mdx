@@ -5,86 +5,19 @@ description: "Listen for real-time data changes across all connected clients"
 
 Subscriptions are how you get live updates from Lark. You subscribe to a path, and your callback fires whenever the data at that path changes — no matter which client made the change.
 
-## Subscribing to a path
-
-Use `on()` to register a callback for a specific event type at a path. The callback fires immediately with the current data, then again whenever the data changes.
-
-```typescript
-const scoresRef = db.ref('players/alice/score');
-
-scoresRef.on('value', (snapshot) => {
-  console.log('Current score:', snapshot.val());
-});
-```
-
-This keeps running until you unsubscribe. Every time Alice's score changes — from any device, any client — your callback fires with the new value.
-
 ## Event types
 
 Lark supports five event types, each suited for different use cases.
 
-### `value`
+| Event | When it fires |
+|---|---|
+| `value` | Fires with the entire snapshot whenever anything under the path changes. The simplest and most common event type. |
+| `child_added` | Fires once for each existing child, then again whenever a new child is added. Includes a `prevChildKey` for sort ordering. |
+| `child_changed` | Fires when an existing child's value changes. |
+| `child_removed` | Fires when a child is removed from the path. |
+| `child_moved` | Fires when a child's sort order changes (relevant with `orderBy` queries). |
 
-Fires with the entire snapshot whenever anything under the path changes. This is the simplest event type and the one you'll use most.
-
-```typescript
-db.ref('players').on('value', (snapshot) => {
-  const players = snapshot.val();
-  console.log('All players:', players);
-});
-```
-
-Every time any player changes, you get the full `players` object. This is convenient but can be expensive if the data is large. For large collections, use the child events below.
-
-### `child_added`
-
-Fires once for each existing child, then again whenever a new child is added. The second parameter, `prevChildKey`, tells you which sibling comes before this child in the sort order.
-
-```typescript
-db.ref('messages').on('child_added', (snapshot, prevChildKey) => {
-  const message = snapshot.val();
-  console.log('New message:', message.text);
-  console.log('Comes after:', prevChildKey);
-});
-```
-
-This is perfect for rendering lists. You get each existing item on initial load, then each new item as it arrives.
-
-### `child_changed`
-
-Fires when an existing child's value changes. You get a snapshot of the child with its new value.
-
-```typescript
-db.ref('players').on('child_changed', (snapshot) => {
-  console.log(`${snapshot.key} updated:`, snapshot.val());
-});
-```
-
-### `child_removed`
-
-Fires when a child is removed from the path.
-
-```typescript
-db.ref('players').on('child_removed', (snapshot) => {
-  console.log(`${snapshot.key} left the game`);
-});
-```
-
-### `child_moved`
-
-Fires when a child's sort order changes. This is only relevant when you're using `orderBy` queries — if the value being sorted on changes, the child "moves" to a new position.
-
-```typescript
-db.ref('players')
-  .orderByChild('score')
-  .on('child_moved', (snapshot, prevChildKey) => {
-    console.log(`${snapshot.key} moved, now after ${prevChildKey}`);
-  });
-```
-
-<Tip>
-For most use cases, `value` is all you need. Use the child events when you're working with large collections and want granular control over list rendering — adding, updating, and removing individual items without re-processing the entire list.
-</Tip>
+`value` is all you need for most use cases. The child events are for working with large collections where you want granular control — adding, updating, and removing individual items without re-processing the entire list.
 
 ## How delta sync works
 
@@ -98,40 +31,25 @@ You don't need to think about this — your callbacks always receive complete sn
 
 Multiple subscriptions to the same path and query share a single server-side view. If 100 clients subscribe to the same leaderboard with the same query, the server does the same work as it would for one subscription. The data is computed once and broadcast to all subscribers.
 
-This is why Lark scales well for real-time features like leaderboards, live dashboards, and game state. The cost is per unique query, not per subscriber.
+This is why Lark scales well for real-time features like leaderboards, live dashboards, and game state. The work is per unique query, not per subscriber.
 
 <Note>
 Shared views apply when the path and query are identical. Two subscriptions to the same path but with different `orderBy` or `limitTo` parameters create separate server-side views.
 </Note>
 
-## Unsubscribing
-
-Call `off()` to stop receiving events. You can remove a specific callback, all callbacks for an event type, or all callbacks on a reference.
-
-```typescript
-// Remove a specific callback
-const callback = (snapshot) => console.log(snapshot.val());
-scoresRef.on('value', callback);
-scoresRef.off('value', callback);
-
-// Remove all 'value' callbacks on this reference
-scoresRef.off('value');
-
-// Remove all callbacks of all event types on this reference
-scoresRef.off();
-```
-
-<Warning>
-Always unsubscribe when you're done — when a component unmounts, a screen is navigated away from, or a user leaves a room. Open subscriptions keep a connection to the server and consume resources on both the client and server.
-</Warning>
-
 ## One-time reads vs. subscriptions
 
-If you only need the current value and don't care about future changes, use `once()` instead of `on()`. It fires your callback exactly once and then automatically unsubscribes.
+If you only need the current value and don't care about future changes, use a one-time read instead of a subscription. It fetches the data once and doesn't keep a live connection to that path.
 
-```typescript
-const snapshot = await db.ref('players/alice').once('value');
-console.log(snapshot.val());
-```
+One-time reads are useful for loading initial state, checking a value before writing, or fetching data that rarely changes.
 
-This is useful for loading initial state, checking a value before writing, or fetching data that rarely changes.
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Lark SDK subscriptions" icon="code" href="/lark-sdk/subscriptions">
+    Full API and code examples for real-time subscriptions in the Lark SDK.
+  </Card>
+  <Card title="REST API streaming" icon="globe" href="/rest-api/streaming">
+    Subscribe to real-time updates over HTTP with Server-Sent Events.
+  </Card>
+</CardGroup>

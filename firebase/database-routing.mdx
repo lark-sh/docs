@@ -1,0 +1,141 @@
+---
+title: "Database routing"
+description: "Split a single Firebase database into many Lark databases — or don't"
+---
+
+Firebase Realtime Database limits you to a handful of database instances. If you're building something with thousands of independent data silos — game rooms, workspaces, documents, sessions — you end up stuffing them all into one giant database under different path prefixes.
+
+```
+your-project.firebaseio.com/
+  room-abc123/
+    players/...
+    chat/...
+  room-def456/
+    players/...
+    chat/...
+  room-ghi789/
+    players/...
+    chat/...
+  ... (thousands more)
+```
+
+This works, but it means every room shares the same database, the same write locks, and the same security rules tree. As you scale, this becomes a bottleneck.
+
+Lark can create databases on the fly. With **Auto Create** enabled, a new database spins up the moment a client connects to it — no provisioning, no limits on how many you can have. Each game room, workspace, or document can live in its own isolated database.
+
+The question is: how do you get there from your existing Firebase setup? You have three options.
+
+## Option 1: Database-in-subdomain routing
+
+Change your connection URL to put the room/workspace ID in the subdomain. This tells Lark to route each connection to its own database.
+
+**Firebase (before):**
+```
+https://your-project.firebaseio.com
+```
+
+**Lark (after):**
+```
+https://room-abc123--your-project.larkdb.net
+```
+
+The `room-abc123--` prefix before `--` is the database name. Lark routes this connection to a database called `room-abc123` inside your project.
+
+Your client code changes from:
+
+```javascript
+// Before: everything in one database
+const config = {
+  databaseURL: 'https://your-project.firebaseio.com'
+};
+const db = firebase.initializeApp(config).database();
+db.ref('room-abc123/players/alice').set({ name: 'Alice' });
+```
+
+to:
+
+```javascript
+// After: each room is its own database
+const roomId = 'room-abc123';
+const config = {
+  databaseURL: `https://${roomId}--your-project.larkdb.net`
+};
+const db = firebase.initializeApp(config).database();
+db.ref('players/alice').set({ name: 'Alice' });
+```
+
+Notice that the path changes too — you no longer need the `room-abc123/` prefix because the room *is* the database. Your writes go to `/players/alice` instead of `/room-abc123/players/alice`.
+
+**When to use this:** When you're okay updating your client code to pass the room/workspace ID in the connection URL. This is the cleanest approach and the one we recommend for new integrations.
+
+<Note>
+Your security rules will also need updating, since paths shift up by one level. A rule that was at `rules/room-abc123/players/$uid` becomes `rules/players/$uid` — the room prefix is gone because each database has its own rules scope.
+</Note>
+
+## Option 2: Use first path segment as database
+
+If you don't want to change your connection URLs or your client code at all, enable **Use First Path as Database** in your project settings. Lark will look at the first segment of every path and route it to a database with that name.
+
+Your connection URL points at the project, just like Firebase:
+
+```javascript
+const config = {
+  databaseURL: 'https://your-project.larkdb.net'
+};
+const db = firebase.initializeApp(config).database();
+
+// This write goes to database "room-abc123" at path "/players/alice"
+db.ref('room-abc123/players/alice').set({ name: 'Alice' });
+```
+
+Lark strips the first path segment (`room-abc123`) and uses it as the database name. The rest of the path (`/players/alice`) is the actual data path within that database.
+
+Your client code stays identical to what you had on Firebase. The routing happens transparently on the server.
+
+**When to use this:** When you want the benefits of separate databases without changing your client code or connection URLs. This is the fastest migration path.
+
+<Warning>
+Because the first path segment becomes the database name, your security rules need to be adjusted. A rule that was at `rules/$roomId/players/$uid` becomes `rules/players/$uid` — the `$roomId` level is stripped. Each database gets its own copy of the rules, scoped to the data inside it.
+</Warning>
+
+## Option 3: Keep everything in one database
+
+You don't have to split anything. Lark is happy to run a single large database with all your data in it, just like Firebase did.
+
+```javascript
+const config = {
+  databaseURL: 'https://your-project.larkdb.net'
+};
+const db = firebase.initializeApp(config).database();
+
+// Same paths as Firebase, same database, same everything
+db.ref('room-abc123/players/alice').set({ name: 'Alice' });
+```
+
+No code changes, no rule changes, no routing to think about. Your data layout stays exactly as it was on Firebase.
+
+**When to use this:** When you're migrating from Firebase and want zero changes beyond the connection URL. This works fine and is a perfectly valid approach.
+
+## Tradeoffs
+
+| | One database | Separate databases |
+|---|---|---|
+| **Migration effort** | Minimal — change the URL and you're done | Some — adjust connection URLs or enable path routing, update security rules |
+| **Write contention** | All rooms share write locks | Each room has its own write locks — no cross-room contention |
+| **Data isolation** | All data in one tree | Each room is a separate tree — cleaner boundaries |
+| **Monitoring** | One database to monitor | Per-database metrics in the dashboard |
+| **Security rules** | One rules tree covers everything, with `$roomId` wildcards | Rules apply per database — simpler rules, no room-level wildcards needed |
+
+For apps with a small number of rooms or low write frequency, a single database works fine. For apps with thousands of concurrent rooms and high write rates, separate databases give you better performance and cleaner isolation.
+
+## Setting it up
+
+1. In the [Lark dashboard](https://dashboard.lark.sh), go to your project's **Settings**.
+2. Enable **Auto Create** so databases are created on first connection.
+3. If using Option 2, enable **Use First Path as Database**.
+4. If using Option 1, update your client code to include the database name in the subdomain.
+5. Update your security rules to account for the path shift (Options 1 and 2 only).
+
+<Tip>
+You can test this incrementally. Create a few databases manually in the dashboard, point some test clients at them, and verify your security rules work before enabling Auto Create for production traffic.
+</Tip>

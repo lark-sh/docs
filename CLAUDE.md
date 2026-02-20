@@ -10,6 +10,7 @@ Lark is a **Firebase Realtime Database alternative** — a real-time database wi
 
 - **Server (Rust)**: `~/lark-rust` — architecture, security rules, wire protocol
 - **Client SDK (JS/TS)**: `~/lark-js` — the Lark-native SDK
+- **Proxy (Go)**: `~/lark-proxy` — REST API, SSE streaming, Firebase wire protocol proxy
 - **Dashboard**: `~/lark-admin` — admin panel (React + Cloudflare Workers)
 
 ## Documentation structure
@@ -70,7 +71,18 @@ For developers with existing Firebase projects or who prefer the Firebase SDK.
 - **Migrating an existing project** (`firebase/migration.mdx`) — Step-by-step: create Lark project, enable Firebase compatibility, configure "use first path as database" if needed, update Firebase config, migrate security rules, export/import data, testing
 - **Compatibility notes** (`firebase/compatibility.mdx`) — What Firebase RTDB features are fully supported, any differences or limitations, wire protocol compatibility
 
-### Section 4: Using Lark with Lark SDKs
+### Section 4: REST API
+
+Read and write data over HTTP — no SDK required. 100% compatible with the Firebase Realtime Database REST API.
+
+#### Group: REST API
+- **Overview** (`rest-api/overview.mdx`) — What the REST API is, URL format (`https://{projectId}.larkdb.net/{database}/{path}.json`), database-in-subdomain format, authentication via `?auth=` query parameter, operations at a glance (GET/PUT/POST/PATCH/DELETE), when to use the REST API
+- **Reading data** (`rest-api/reading.mdx`) — GET requests, shallow reads (`?shallow=true`), querying (`orderBy`, `limitToFirst`, `limitToLast`, `startAt`, `endAt`, `equalTo`), formatting (`print=pretty`, `print=silent`, JSONP, download), timeouts
+- **Writing data** (`rest-api/writing.mdx`) — PUT (set), POST (push), PATCH (update), DELETE (remove), multi-path updates, server values (`{".sv": "timestamp"}`), silent writes, error responses
+- **Streaming** (`rest-api/streaming.mdx`) — Server-Sent Events (SSE), `Accept: text/event-stream`, event types (`put`, `patch`, `keep-alive`, `cancel`, `auth_revoked`), path semantics, browser EventSource and Node.js examples
+- **Conditional requests** (`rest-api/conditional.mdx`) — ETags (`X-Firebase-ETag: true`), conditional writes (`If-Match`), `412 Precondition Failed`, compare-and-swap retry pattern
+
+### Section 5: Using Lark with Lark SDKs
 
 The native Lark JavaScript/TypeScript SDK.
 

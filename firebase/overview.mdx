@@ -11,6 +11,8 @@ The official Firebase JavaScript SDK (and other platform SDKs) can connect to La
 
 Lark implements the same wire protocol that Firebase RTDB uses. When the Firebase SDK opens a WebSocket connection, it doesn't know (or care) that it's talking to Lark instead of Google's servers. The messages are identical.
 
+The [REST API](/rest-api/overview) is also fully compatible — if your backend hits Firebase's `/.json` endpoints, change the hostname and it works with Lark.
+
 <Tip>Lark passes 100% of Firebase's 800+ JS SDK test suite. Every operation, every edge case, every event type.</Tip>
 
 ## Enabling Firebase compatibility
@@ -22,7 +24,6 @@ To use Firebase SDKs with Lark, toggle **Allow Legacy Firebase** in your project
 Everything Firebase RTDB offers, plus:
 
 - **Performance** — Sub-50ms p99 latency.
-- **Pricing** — CCU-based, not per-operation. You pay for concurrent connections, not every read and write.
 - **New features** — Volatile paths, shared view optimization, and more.
 
 ## What's different

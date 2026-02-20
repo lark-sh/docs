@@ -3,11 +3,11 @@ title: "OnDisconnect"
 description: "Queue operations that run when a client disconnects"
 ---
 
-# OnDisconnect
-
 OnDisconnect operations let you write data to the server **when the client disconnects**. The server executes these writes even if the client crashes, closes the browser tab, or loses network without a clean goodbye.
 
 This is the building block for presence systems, cleanup logic, and any scenario where you need the server to act on behalf of a client that's gone.
+
+For a conceptual overview, see [OnDisconnect and presence](/platform/presence).
 
 ## Creating OnDisconnect operations
 
@@ -76,7 +76,7 @@ await onDisconnectRef.set(false);
 await onDisconnectRef.cancel();
 ```
 
-## Presence system example
+## Presence system
 
 The most common use case for OnDisconnect is a presence system — tracking which users are currently online. Here's a complete implementation:
 
@@ -87,13 +87,12 @@ const db = new LarkDatabase("my-project/my-database");
 await db.connect({ token: "user-jwt-token" });
 
 const uid = db.auth!.uid;
-const userStatusRef = db.ref(`users/${uid}`);
+const userStatusRef = db.ref(`users/${uid}/status`);
 
 // Watch connection state
 db.ref(".info/connected").on("value", async (snapshot) => {
   if (!snapshot.val()) {
-    // We're offline — nothing to do, the server will handle it
-    return;
+    return; // We're offline — the server will handle it
   }
 
   // We just connected (or reconnected).
@@ -112,7 +111,7 @@ db.ref(".info/connected").on("value", async (snapshot) => {
 ```
 
 <Note>
-The order matters in this example. Register the OnDisconnect operation **before** writing your online status. This avoids a race condition where you set `online: true` but the connection drops before the OnDisconnect is registered.
+The order matters. Register the OnDisconnect operation **before** writing your online status. This avoids a race condition where you set `online: true` but the connection drops before the OnDisconnect is registered.
 </Note>
 
 ### Why subscribe to `.info/connected`?
@@ -133,11 +132,17 @@ const unsubscribe = db.ref("users/bob/online").on("value", (snapshot) => {
   }
 });
 
-// Or watch all users
-const unsubAll = db.ref("users").on("child_changed", (snapshot) => {
-  const user = snapshot.val();
-  console.log(`${snapshot.key} is ${user.online ? "online" : "offline"}`);
-});
+// Or watch all online users
+const unsubAll = db.ref("users")
+  .orderByChild("status/online")
+  .equalTo(true)
+  .on("value", (snapshot) => {
+    const onlineUsers: string[] = [];
+    snapshot.forEach((child) => {
+      onlineUsers.push(child.key);
+    });
+    renderOnlineList(onlineUsers);
+  });
 ```
 
 ## Cleanup on disconnect

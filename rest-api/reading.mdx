@@ -1,0 +1,161 @@
+---
+title: "Reading data"
+description: "Fetch data from your database with GET requests"
+---
+
+Read data by sending a `GET` request to any path with `.json` appended.
+
+## Basic read
+
+```bash
+curl 'https://chess-app.larkdb.net/my-game/players/alice.json'
+```
+
+Response:
+
+```json
+{
+  "name": "Alice",
+  "score": 250,
+  "online": true
+}
+```
+
+If the path doesn't exist, the response is `null`.
+
+## Shallow reads
+
+For large datasets, you often don't need the entire subtree. Add `shallow=true` to get only the immediate keys with placeholder values:
+
+```bash
+curl 'https://chess-app.larkdb.net/my-game/players.json?shallow=true'
+```
+
+Response:
+
+```json
+{
+  "alice": true,
+  "bob": true,
+  "carol": true
+}
+```
+
+Each key maps to `true` regardless of its actual value. This lets you discover what children exist without downloading all their data.
+
+## Querying
+
+Filter and sort data using query parameters. These map directly to the query methods available in the SDKs.
+
+### Order by
+
+Specify a sort order with `orderBy`:
+
+```bash
+# Order by a child key
+curl 'https://chess-app.larkdb.net/my-game/players.json?orderBy="score"'
+
+# Order by key
+curl 'https://chess-app.larkdb.net/my-game/players.json?orderBy="$key"'
+
+# Order by value (for lists of primitives)
+curl 'https://chess-app.larkdb.net/my-game/highscores.json?orderBy="$value"'
+
+# Order by priority
+curl 'https://chess-app.larkdb.net/my-game/tasks.json?orderBy="$priority"'
+```
+
+<Note>The `orderBy` value must be a JSON string — wrap it in double quotes in the URL. Most shells require escaping: `orderBy=\"score\"` or `orderBy=%22score%22`.</Note>
+
+### Limit results
+
+```bash
+# First 5 results
+curl 'https://chess-app.larkdb.net/my-game/players.json?orderBy="score"&limitToFirst=5'
+
+# Last 10 results
+curl 'https://chess-app.larkdb.net/my-game/players.json?orderBy="score"&limitToLast=10'
+```
+
+### Range filters
+
+```bash
+# Players with score >= 100
+curl 'https://chess-app.larkdb.net/my-game/players.json?orderBy="score"&startAt=100'
+
+# Players with score <= 500
+curl 'https://chess-app.larkdb.net/my-game/players.json?orderBy="score"&endAt=500'
+
+# Players with score between 100 and 500
+curl 'https://chess-app.larkdb.net/my-game/players.json?orderBy="score"&startAt=100&endAt=500'
+
+# Players with exactly 250 points
+curl 'https://chess-app.larkdb.net/my-game/players.json?orderBy="score"&equalTo=250'
+```
+
+Range values can be numbers, strings, or booleans. String values must be JSON-encoded (wrapped in quotes).
+
+## Formatting
+
+### Pretty print
+
+```bash
+curl 'https://chess-app.larkdb.net/my-game/players.json?print=pretty'
+```
+
+Returns indented, human-readable JSON. Useful for debugging.
+
+### Silent response
+
+```bash
+curl -X PUT 'https://chess-app.larkdb.net/my-game/players/alice/score.json' \
+  -d '300' \
+  --header 'print: silent'
+```
+
+Or as a query parameter:
+
+```bash
+curl -X PUT 'https://chess-app.larkdb.net/my-game/players/alice/score.json?print=silent' \
+  -d '300'
+```
+
+Returns `204 No Content` instead of echoing the written data back. Saves bandwidth on writes when you don't need the response body.
+
+### JSONP
+
+For cross-domain requests from browsers that don't support CORS:
+
+```bash
+curl 'https://chess-app.larkdb.net/my-game/players.json?callback=myFunc'
+```
+
+Response:
+
+```javascript
+myFunc({"alice":{"name":"Alice","score":250}})
+```
+
+### Download
+
+```bash
+curl 'https://chess-app.larkdb.net/my-game/players.json?download=players.json'
+```
+
+Sets the `Content-Disposition` header so browsers treat the response as a file download.
+
+## Timeouts
+
+Set a request timeout with the `timeout` parameter:
+
+```bash
+# 10-second timeout
+curl 'https://chess-app.larkdb.net/my-game/big-dataset.json?timeout=10s'
+
+# 3-minute timeout
+curl 'https://chess-app.larkdb.net/my-game/big-dataset.json?timeout=3min'
+```
+
+Valid suffixes: `ms`, `s`, `min`. Maximum timeout is 15 minutes. Default is 30 seconds.
+
+If the request exceeds the timeout, you'll get a `504 Gateway Timeout` response.

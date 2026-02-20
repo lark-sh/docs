@@ -1,0 +1,133 @@
+---
+title: "Writing data"
+description: "Create, update, and delete data with PUT, POST, PATCH, and DELETE"
+---
+
+Write data by sending `PUT`, `POST`, `PATCH`, or `DELETE` requests. The request body is JSON.
+
+## Set (PUT)
+
+Replace the data at a path completely. Any existing data at that path is overwritten.
+
+```bash
+curl -X PUT \
+  'https://chess-app.larkdb.net/my-game/players/alice.json?auth=YOUR_TOKEN' \
+  -d '{"name": "Alice", "score": 250, "online": true}'
+```
+
+Response (echoes the written data):
+
+```json
+{
+  "name": "Alice",
+  "score": 250,
+  "online": true
+}
+```
+
+`PUT` to a path that doesn't exist creates it. `PUT` to a path that does exist replaces it entirely — missing fields are deleted, not preserved.
+
+## Push (POST)
+
+Add a new child with an auto-generated key. This is the REST equivalent of `push()` in the SDKs.
+
+```bash
+curl -X POST \
+  'https://chess-app.larkdb.net/my-game/messages.json?auth=YOUR_TOKEN' \
+  -d '{"text": "Hello!", "sender": "alice", "timestamp": {".sv": "timestamp"}}'
+```
+
+Response:
+
+```json
+{
+  "name": "-Kabc123def"
+}
+```
+
+The `name` field contains the generated key. Push IDs are chronologically sortable — later posts sort after earlier ones.
+
+<Tip>Use `POST` for append-only data like chat messages, event logs, or queue items where each entry needs a unique key.</Tip>
+
+## Update (PATCH)
+
+Merge data into an existing path. Only the specified keys are modified — everything else is preserved.
+
+```bash
+curl -X PATCH \
+  'https://chess-app.larkdb.net/my-game/players/alice.json?auth=YOUR_TOKEN' \
+  -d '{"score": 300, "lastSeen": {".sv": "timestamp"}}'
+```
+
+This updates Alice's `score` and `lastSeen` without touching `name` or `online`.
+
+### Multi-path updates
+
+Update multiple locations atomically by using paths as keys in your `PATCH` body at a higher level:
+
+```bash
+curl -X PATCH \
+  'https://chess-app.larkdb.net/my-game/.json?auth=YOUR_TOKEN' \
+  -d '{
+    "players/alice/score": 300,
+    "players/bob/score": 275,
+    "leaderboard/first": "alice",
+    "leaderboard/second": "bob"
+  }'
+```
+
+All four updates happen atomically — either they all succeed or none do. Multi-path updates are the way to keep denormalized data consistent.
+
+## Remove (DELETE)
+
+Delete data at a path.
+
+```bash
+curl -X DELETE \
+  'https://chess-app.larkdb.net/my-game/players/alice.json?auth=YOUR_TOKEN'
+```
+
+Returns `null` on success. Deleting a non-existent path succeeds silently.
+
+## Server values
+
+Use `{".sv": "timestamp"}` to write the server's current timestamp:
+
+```bash
+curl -X PUT \
+  'https://chess-app.larkdb.net/my-game/players/alice/lastSeen.json?auth=YOUR_TOKEN' \
+  -d '{".sv": "timestamp"}'
+```
+
+The server replaces `{".sv": "timestamp"}` with the actual Unix timestamp in milliseconds.
+
+## Silent writes
+
+If you don't need the response body (saving bandwidth), add `print=silent`:
+
+```bash
+curl -X PUT \
+  'https://chess-app.larkdb.net/my-game/players/alice/score.json?auth=YOUR_TOKEN&print=silent' \
+  -d '500'
+```
+
+Returns `204 No Content` instead of echoing the written data.
+
+## Error responses
+
+When a write fails, you get an error object:
+
+```json
+{
+  "error": "permission_denied",
+  "message": "You do not have permission to write to this path"
+}
+```
+
+| Status code | Meaning |
+|---|---|
+| `200` | Write succeeded |
+| `204` | Write succeeded (with `print=silent`) |
+| `400` | Invalid JSON or bad request |
+| `403` | Security rules denied the write |
+| `401` | Authentication required |

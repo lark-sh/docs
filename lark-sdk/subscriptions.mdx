@@ -3,9 +3,9 @@ title: "Subscriptions"
 description: "Listen for real-time updates with the Lark SDK"
 ---
 
-# Subscriptions
-
 Subscriptions are the core of Lark's real-time capabilities. When data changes on the server, your callback fires with the updated data — no polling, no manual refreshes.
+
+For a conceptual overview of how subscriptions work under the hood (delta sync, shared views), see [Subscriptions](/platform/subscriptions).
 
 ## Basic usage
 
@@ -123,7 +123,7 @@ function cleanup() {
 }
 ```
 
-### New chat messages
+### Chat messages
 
 Listen for messages added to a chat room:
 
@@ -148,12 +148,29 @@ const unsubscribe = db.ref("game/score").on("value", (snapshot) => {
 });
 ```
 
+### Leaderboard
+
+Watch a sorted, limited query:
+
+```typescript
+const unsubscribe = db.ref("players")
+  .orderByChild("score")
+  .limitToLast(10)
+  .on("value", (snapshot) => {
+    const leaderboard: Array<{ name: string; score: number }> = [];
+    snapshot.forEach((child) => {
+      leaderboard.push(child.val());
+    });
+    leaderboard.reverse(); // limitToLast returns ascending, flip for top-first
+    renderLeaderboard(leaderboard);
+  });
+```
+
 ## Unsubscribing
 
 Always unsubscribe when you no longer need updates. This frees up resources on both the client and server.
 
 ```typescript
-// Store the unsubscribe function
 const unsubscribe = db.ref("data").on("value", callback);
 
 // Call it when done
@@ -178,7 +195,6 @@ function ScoreDisplay({ db, playerId }: { db: LarkDatabase; playerId: string }) 
       setScore(snapshot.val() ?? 0);
     });
 
-    // Cleanup on unmount
     return unsubscribe;
   }, [db, playerId]);
 

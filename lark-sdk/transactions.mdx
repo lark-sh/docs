@@ -3,13 +3,13 @@ title: "Transactions"
 description: "Atomic operations with the Lark SDK"
 ---
 
-# Transactions
-
 Transactions let you update data based on its current value without worrying about conflicts from other clients. They're essential for counters, inventory systems, auctions, and any scenario where a write depends on the existing data.
+
+For a conceptual overview of how transactions work and why you need them, see [Transactions](/platform/transactions).
 
 ## Callback-style transactions
 
-The most common pattern. You pass a function that receives the current value and returns the new value:
+The most common pattern. Pass a function that receives the current value and returns the new value:
 
 ```typescript
 import { LarkDatabase } from "@lark-sh/client";
@@ -18,7 +18,6 @@ const db = new LarkDatabase("my-project/my-database");
 await db.connect({ anonymous: true });
 
 const result = await db.ref("counters/pageViews").transaction((currentValue) => {
-  // currentValue is the current data at this path (or null if it doesn't exist)
   return (currentValue ?? 0) + 1;
 });
 
@@ -26,33 +25,27 @@ console.log(result.committed); // true if the transaction succeeded
 console.log(result.snapshot.val()); // The final committed value
 ```
 
-### How it works
+### Transaction results
 
-1. The SDK reads the current value at the path.
-2. Your update function runs with that value.
-3. The SDK sends the new value to the server along with the expected current value.
-4. If another client changed the data in the meantime, the server rejects the write.
-5. The SDK re-reads the latest value and runs your function again.
-6. This repeats until the write succeeds or the retry limit is reached.
+Every `transaction()` call returns a result object:
 
-<Note>
-Your update function may be called **multiple times** if there are concurrent writes. Make sure it has no side effects — don't make network requests, modify external state, or log analytics inside it.
-</Note>
+| Property | Type | Description |
+|---|---|---|
+| `committed` | `boolean` | `true` if the transaction wrote data, `false` if it was aborted. |
+| `snapshot` | `DataSnapshot` | The final value at the path after the transaction. |
 
 ### Aborting a transaction
 
-Return `undefined` from your update function to abort the transaction without writing anything:
+Return `undefined` from your update function to abort without writing:
 
 ```typescript
 const result = await db.ref("inventory/item-1").transaction((current) => {
   if (current === null) {
-    // Item doesn't exist, abort
-    return undefined;
+    return undefined; // Item doesn't exist, abort
   }
 
   if (current.quantity <= 0) {
-    // Out of stock, abort
-    return undefined;
+    return undefined; // Out of stock, abort
   }
 
   return {
@@ -80,40 +73,52 @@ try {
 }
 ```
 
+<Note>
+Your update function may be called **multiple times** if there are concurrent writes. Make sure it has no side effects — don't make network requests, modify external state, or log analytics inside it.
+</Note>
+
 ## Multi-path transactions
 
-For atomic updates across multiple paths, pass an object with path-value pairs:
+When you need to update multiple paths atomically — either all the changes happen, or none of them do.
+
+### Object syntax
+
+The simplest form. Pass an object where keys are paths and values are what to write. Use `null` to delete a path.
 
 ```typescript
 await db.transaction({
-  "/users/alice/balance": 50,
-  "/users/bob/balance": 150,
-  "/transfers/latest": { from: "alice", to: "bob", amount: 100 },
+  "/players/alice/coins": 50,
+  "/players/bob/coins": 150,
+  "/trades/latest": { from: "alice", to: "bob", amount: 50 },
 });
 ```
 
+All three writes happen atomically. If any one fails, none of them are applied.
+
 ### Array syntax with conditions
 
-For more complex scenarios, you can use the array syntax to specify operations and conditions:
+For more control, use the array syntax with explicit operations. This lets you add conditions that check the current value before proceeding.
 
 ```typescript
 await db.transaction([
-  {
-    path: "/users/alice/balance",
-    op: "set",
-    value: 50,
-    condition: { type: "value", value: 150 }, // Only if current value is 150
-  },
-  {
-    path: "/users/bob/balance",
-    op: "set",
-    value: 250,
-    condition: { type: "value", value: 150 }, // Only if current value is 150
-  },
+  // Only proceed if Alice has exactly 100 coins
+  { op: "condition", path: "/players/alice/coins", value: 100 },
+  // Transfer 50 coins
+  { op: "set", path: "/players/alice/coins", value: 50 },
+  { op: "set", path: "/players/bob/coins", value: 150 },
 ]);
 ```
 
 If any condition fails, the entire transaction is rejected and no writes are applied.
+
+For complex objects, Lark computes a SHA-256 hash for comparison. This lets you condition on "this object hasn't changed" without specifying every field:
+
+```typescript
+await db.transaction([
+  { op: "condition", path: "/game/state", value: currentStateHash },
+  { op: "set", path: "/game/state", value: newState },
+]);
+```
 
 ## Examples
 
@@ -125,26 +130,43 @@ await db.ref("stats/totalGames").transaction((current) => {
 });
 ```
 
-### Conditional update
-
-Only update a player's high score if the new score is actually higher:
+### Update a high score (only if higher)
 
 ```typescript
 const newScore = 250;
 
 const result = await db.ref("players/alice/highScore").transaction((current) => {
   if (current !== null && current >= newScore) {
-    // Current high score is already higher, abort
-    return undefined;
+    return undefined; // Current high score is already higher, abort
   }
   return newScore;
 });
 
 if (result.committed) {
   console.log("New high score recorded:", result.snapshot.val());
-} else {
-  console.log("Existing high score is higher, no update needed");
 }
+```
+
+### Transfer currency between players
+
+```typescript
+// Read current values first
+const aliceSnapshot = await db.ref("players/alice/coins").once("value");
+const bobSnapshot = await db.ref("players/bob/coins").once("value");
+const aliceCoins = aliceSnapshot.val();
+const bobCoins = bobSnapshot.val();
+
+const transferAmount = 50;
+
+// Use a conditional multi-path transaction
+await db.transaction([
+  // Ensure neither balance changed since we read it
+  { op: "condition", path: "/players/alice/coins", value: aliceCoins },
+  { op: "condition", path: "/players/bob/coins", value: bobCoins },
+  // Apply the transfer
+  { op: "set", path: "/players/alice/coins", value: aliceCoins - transferAmount },
+  { op: "set", path: "/players/bob/coins", value: bobCoins + transferAmount },
+]);
 ```
 
 ### Claim a unique resource
@@ -154,8 +176,7 @@ Use a transaction to ensure only one client can claim something:
 ```typescript
 const result = await db.ref("game/crown").transaction((current) => {
   if (current !== null) {
-    // Someone already claimed it
-    return undefined;
+    return undefined; // Someone already claimed it
   }
   return { claimedBy: "alice", claimedAt: Date.now() };
 });
@@ -165,6 +186,18 @@ if (result.committed) {
 } else {
   console.log("Someone else got it first");
 }
+```
+
+### Conditional multi-path update
+
+Only claim a reward if it hasn't been claimed yet:
+
+```typescript
+await db.transaction([
+  { op: "condition", path: "/rewards/reward1/claimed", value: false },
+  { op: "set", path: "/rewards/reward1/claimed", value: true },
+  { op: "set", path: "/rewards/reward1/claimedBy", value: "alice" },
+]);
 ```
 
 <Warning>
