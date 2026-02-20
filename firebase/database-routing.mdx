@@ -27,7 +27,7 @@ The question is: how do you get there from your existing Firebase setup? You hav
 
 ## Option 1: Database-in-subdomain routing
 
-Change your connection URL to put the room/workspace ID in the subdomain. This tells Lark to route each connection to its own database.
+Change your connection URL to put the room/workspace ID in the subdomain. This tells Lark to route each connection to its own database — but your client code and security rules stay exactly the same.
 
 **Firebase (before):**
 ```
@@ -41,40 +41,37 @@ https://room-abc123--your-project.larkdb.net
 
 The `room-abc123--` prefix before `--` is the database name. Lark routes this connection to a database called `room-abc123` inside your project.
 
-Your client code changes from:
+Your client code keeps writing to the same paths:
 
 ```javascript
-// Before: everything in one database
-const config = {
-  databaseURL: 'https://your-project.firebaseio.com'
-};
-const db = firebase.initializeApp(config).database();
-db.ref('room-abc123/players/alice').set({ name: 'Alice' });
-```
-
-to:
-
-```javascript
-// After: each room is its own database
 const roomId = 'room-abc123';
 const config = {
   databaseURL: `https://${roomId}--your-project.larkdb.net`
 };
 const db = firebase.initializeApp(config).database();
-db.ref('players/alice').set({ name: 'Alice' });
+
+// Same paths as before — the room prefix is still there
+db.ref('room-abc123/players/alice').set({ name: 'Alice' });
 ```
 
-Notice that the path changes too — you no longer need the `room-abc123/` prefix because the room *is* the database. Your writes go to `/players/alice` instead of `/room-abc123/players/alice`.
+The first path segment (`room-abc123`) is technically redundant — it matches the database name — but that's the point. Your paths, your security rules, your entire data model stays identical. The only change is the connection URL.
 
-**When to use this:** When you're okay updating your client code to pass the room/workspace ID in the connection URL. This is the cleanest approach and the one we recommend for new integrations.
+Inside the `room-abc123` database, the data looks like:
 
-<Note>
-Your security rules will also need updating, since paths shift up by one level. A rule that was at `rules/room-abc123/players/$uid` becomes `rules/players/$uid` — the room prefix is gone because each database has its own rules scope.
-</Note>
+```
+room-abc123/
+  players/
+    alice/...
+  chat/...
+```
+
+Yes, there's a "wasted" level in the tree. That's the tradeoff for zero code and rule changes.
+
+**When to use this:** When you want separate databases with no changes to your client code paths or security rules. You just need to vary the connection URL per room, which typically means one line of code where you construct the Firebase config.
 
 ## Option 2: Use first path segment as database
 
-If you don't want to change your connection URLs or your client code at all, enable **Use First Path as Database** in your project settings. Lark will look at the first segment of every path and route it to a database with that name.
+If you don't want to change your connection URLs at all, enable **Use First Path as Database** in your project settings. Lark will look at the first segment of every path and route it to a database with that name — and strip that segment from the path.
 
 Your connection URL points at the project, just like Firebase:
 
@@ -84,18 +81,18 @@ const config = {
 };
 const db = firebase.initializeApp(config).database();
 
-// This write goes to database "room-abc123" at path "/players/alice"
+// Client writes to 'room-abc123/players/alice' — same as before
 db.ref('room-abc123/players/alice').set({ name: 'Alice' });
 ```
 
-Lark strips the first path segment (`room-abc123`) and uses it as the database name. The rest of the path (`/players/alice`) is the actual data path within that database.
+Lark strips the first path segment (`room-abc123`) and uses it as the database name. The write lands at `/players/alice` in a database called `room-abc123`.
 
-Your client code stays identical to what you had on Firebase. The routing happens transparently on the server.
+Your client code stays identical to what you had on Firebase. No connection URL changes, no path changes. The routing happens transparently on the server.
 
-**When to use this:** When you want the benefits of separate databases without changing your client code or connection URLs. This is the fastest migration path.
+**When to use this:** When you want the benefits of separate databases without changing any client code or connection URLs. This is the fastest migration path.
 
 <Warning>
-Because the first path segment becomes the database name, your security rules need to be adjusted. A rule that was at `rules/$roomId/players/$uid` becomes `rules/players/$uid` — the `$roomId` level is stripped. Each database gets its own copy of the rules, scoped to the data inside it.
+Because the first path segment is stripped, your security rules need to be adjusted. A rule that was at `rules/$roomId/players/$uid` becomes `rules/players/$uid` — the `$roomId` level is gone because each database gets its own copy of the rules, scoped to the data inside it.
 </Warning>
 
 ## Option 3: Keep everything in one database
@@ -116,17 +113,18 @@ No code changes, no rule changes, no routing to think about. Your data layout st
 
 **When to use this:** When you're migrating from Firebase and want zero changes beyond the connection URL. This works fine and is a perfectly valid approach.
 
-## Tradeoffs
+## Comparing the three options
 
-| | One database | Separate databases |
-|---|---|---|
-| **Migration effort** | Minimal — change the URL and you're done | Some — adjust connection URLs or enable path routing, update security rules |
-| **Write contention** | All rooms share write locks | Each room has its own write locks — no cross-room contention |
-| **Data isolation** | All data in one tree | Each room is a separate tree — cleaner boundaries |
-| **Monitoring** | One database to monitor | Per-database metrics in the dashboard |
-| **Security rules** | One rules tree covers everything, with `$roomId` wildcards | Rules apply per database — simpler rules, no room-level wildcards needed |
+| | Option 1: Subdomain | Option 2: First path | Option 3: One database |
+|---|---|---|---|
+| **Connection URL changes** | Yes — include room ID in subdomain | No | No |
+| **Client code changes** | No — same paths | No — same paths | No |
+| **Security rules changes** | No — same structure | Yes — remove the top-level wildcard | No |
+| **Separate databases** | Yes | Yes | No |
+| **Write contention** | Per-room (isolated) | Per-room (isolated) | Shared across all rooms |
+| **Data structure** | Redundant first segment | Clean (first segment stripped) | Same as Firebase |
 
-For apps with a small number of rooms or low write frequency, a single database works fine. For apps with thousands of concurrent rooms and high write rates, separate databases give you better performance and cleaner isolation.
+For apps with a small number of rooms or low write frequency, a single database (Option 3) works fine. For apps with thousands of concurrent rooms and high write rates, separate databases (Options 1 or 2) give you better performance and cleaner isolation.
 
 ## Setting it up
 
@@ -134,8 +132,8 @@ For apps with a small number of rooms or low write frequency, a single database 
 2. Enable **Auto Create** so databases are created on first connection.
 3. If using Option 2, enable **Use First Path as Database**.
 4. If using Option 1, update your client code to include the database name in the subdomain.
-5. Update your security rules to account for the path shift (Options 1 and 2 only).
+5. If using Option 2, update your security rules to remove the top-level path segment.
 
 <Tip>
-You can test this incrementally. Create a few databases manually in the dashboard, point some test clients at them, and verify your security rules work before enabling Auto Create for production traffic.
+You can test this incrementally. Create a few databases manually in the dashboard, point some test clients at them, and verify everything works before enabling Auto Create for production traffic.
 </Tip>

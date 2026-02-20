@@ -16,6 +16,7 @@ All core Firebase RTDB operations work with Lark:
 - **onDisconnect** — `onDisconnect().set()`, `onDisconnect().update()`, `onDisconnect().remove()`, `onDisconnect().cancel()`
 - **Server values** — `ServerValue.TIMESTAMP`
 - **Priority** — Setting and querying by priority
+- **REST API** — `GET`, `PUT`, `POST`, `PATCH`, `DELETE`, query parameters, ETags, and Server-Sent Events streaming. See the [REST API documentation](/rest-api/overview) for full details.
 
 ## Wire protocol
 
@@ -32,12 +33,6 @@ A few things work differently in Lark:
 ### Connection URL
 
 You connect to `your-project-id.larkdb.net` instead of `your-project.firebaseio.com`. This is the only required code change.
-
-### Firebase REST API
-
-Lark's REST API is fully compatible with the Firebase Realtime Database REST API. If your backend uses `https://your-project.firebaseio.com/path.json`, change the hostname to `your-project-id.larkdb.net` and it works the same way — `GET`, `PUT`, `POST`, `PATCH`, `DELETE`, query parameters, ETags, and Server-Sent Events streaming are all supported.
-
-See the [REST API documentation](/rest-api/overview) for full details.
 
 ### No Firebase CLI integration
 

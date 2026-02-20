@@ -61,5 +61,6 @@ Moving from Firebase Realtime Database to Lark is straightforward. Your code, se
 A few things to double-check before you go live:
 
 - **Ephemeral mode** — Make sure ephemeral mode is OFF if you want data to persist. Ephemeral mode is a Lark feature that discards data when all subscribers disconnect. Great for presence systems, not great for your users table.
-- **Auto-create** — Make sure auto-create is ON if your app expects databases to exist on first connect. Firebase creates databases implicitly; Lark can too, but the setting needs to be enabled.
+- **Auto-create** — If you're using [database routing](/firebase/database-routing) to split data into separate databases, enable auto-create so Lark creates databases on first connect.
 - **Security rules** — Test your rules in Lark's rules editor before going live. The syntax is the same, but it's worth verifying that everything was copied correctly.
+- **Volatile paths** — If you have high-frequency data like cursor positions or player movement, consider configuring [volatile paths](/platform/volatile). Firebase SDK clients fully support volatile updates — Lark batches them on the server and delivers them as `PATCH` events that the Firebase SDK handles natively. You just need to define the volatile path patterns in your project settings.

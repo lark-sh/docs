@@ -29,7 +29,7 @@ db.ref('cursors/alice').set({
 |---|---|---|
 | **Acknowledgment** | Server confirms the write | Resolves immediately, no server ack |
 | **Delivery** | Reliable, ordered | Best-effort, latest-value-wins |
-| **Persistence** | Written to durable storage | Written to durable storage |
+| **Persistence** | Written to durable storage | Not persisted — in-memory only |
 | **Broadcast** | Every change is sent to subscribers | Batched and coalesced before broadcast |
 | **Transport** | TCP (WebSocket) or QUIC streams (WebTransport) | TCP (WebSocket) or UDP datagrams (WebTransport) |
 
@@ -42,7 +42,7 @@ Over WebTransport, volatile writes use UDP datagrams — truly unreliable delive
 The server broadcasts volatile updates at fixed intervals:
 
 - **WebTransport clients**: ~20 Hz (every 50ms). At most 20 volatile updates per second reach each subscriber.
-- **WebSocket clients**: ~4 Hz (every 250ms). WebSocket's TCP overhead means a slower broadcast cadence to avoid congestion.
+- **WebSocket clients**: ~7 Hz (every 150ms). Slower than WebTransport due to TCP overhead, but still fast enough for smooth updates.
 
 This means if you're writing cursor positions 60 times per second, a WebTransport subscriber sees ~20 updates per second and a WebSocket subscriber sees ~4. In both cases, they always get the latest value — not a delayed queue of old positions.
 
@@ -56,21 +56,23 @@ The 2 KB limit is enforced per write. If your volatile payload exceeds it, the w
 
 ## Configuring volatile paths
 
-Volatile paths are defined as patterns in your project configuration. You set them in the [Lark dashboard](https://dashboard.lark.sh) under **Project Settings > Volatile Paths**.
+Mark a path as volatile by adding `".volatile": true` in your [security rules](/platform/security-rules):
 
-Patterns use `*` as a wildcard for a single path segment:
-
+```json
+{
+  "rules": {
+    "cursors": {
+      "$userId": {
+        ".volatile": true,
+        ".read": true,
+        ".write": "auth.uid === $userId"
+      }
+    }
+  }
+}
 ```
-cursors/*
-players/*/position
-rooms/*/state/*/transform
-```
 
-When a client connects, the server sends the list of volatile path patterns. The SDK automatically uses volatile delivery for any write that matches a pattern.
-
-<Tip>
-You don't need to change your write code. Once a path is configured as volatile, all writes to matching paths automatically use volatile delivery. The same `set()` and `update()` calls just behave differently under the hood.
-</Tip>
+Any path under a `.volatile` rule automatically uses volatile delivery. You don't need to change your write code — the same `set()` and `update()` calls just behave differently under the hood.
 
 ## Volatile snapshots
 
@@ -114,5 +116,5 @@ Volatile paths are the right choice when:
 - Game actions and events (order and completeness matter)
 
 <Info>
-Volatile paths are not about durability — the data is still persisted. They're about delivery. The tradeoff is that subscribers may not see every intermediate value, but they always see the most recent one.
+Volatile data is not persisted to disk — it lives in memory only. If the server restarts, volatile data is gone. This is by design — volatile paths are for ephemeral, high-frequency data where the next update is always right behind the current one.
 </Info>
