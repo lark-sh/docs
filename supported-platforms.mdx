@@ -1,0 +1,27 @@
+---
+title: "Supported platforms"
+description: "Every platform and SDK you can use to connect to Lark"
+---
+
+Lark supports two ways to connect: the **Lark SDK** (a lightweight, purpose-built client) and the **Firebase SDKs** (drop-in compatibility with your existing Firebase code). You can also use the **REST API** from any language or platform.
+
+## Client SDKs
+
+| Platform | Lark SDK | Firebase SDK |
+|---|---|---|
+| **JavaScript / TypeScript** | [Lark JS SDK](/lark-sdk/overview) | [Firebase JS SDK](/firebase/javascript) |
+| **Android** (Kotlin / Java) | — | [Firebase Android SDK](/firebase/android) |
+| **iOS / Apple** (Swift) | — | [Firebase iOS SDK](/firebase/ios) |
+| **Flutter** (Dart) | — | [Firebase Flutter SDK](/firebase/flutter) |
+| **C++** | — | [Firebase C++ SDK](/firebase/cpp) |
+| **Unity** (C#) | — | [Firebase Unity SDK](/firebase/unity) |
+
+## REST API
+
+The [REST API](/rest-api/overview) works from any language or platform that can make HTTP requests — Python, Ruby, Go, Java, shell scripts, serverless functions, or anything else. It's 100% compatible with the Firebase Realtime Database REST API.
+
+## How to choose
+
+- **JavaScript / TypeScript app?** The [Lark SDK](/lark-sdk/overview) is the best choice. It's smaller (~20KB), supports WebTransport for lower latency, and has built-in support for volatile paths. If you're migrating an existing Firebase app, the [Firebase JS SDK](/firebase/javascript) works too — just change the URL.
+- **Mobile or game engine?** Use the [Firebase SDK](/firebase/overview) for your platform. Change the database URL and everything works.
+- **Server-side or scripting?** Use the [REST API](/rest-api/overview). No SDK needed.
