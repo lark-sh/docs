@@ -1,0 +1,37 @@
+---
+title: "Unity SDK"
+description: "Use the Firebase Unity SDK with Lark"
+---
+
+Point your Firebase Unity SDK at Lark by passing your Lark URL to `FirebaseDatabase.GetInstance()`. Everything else — listeners, writes, transactions — works without changes.
+
+## Setup
+
+Add the Firebase Realtime Database package to your Unity project:
+
+1. Download the [Firebase Unity SDK](https://firebase.google.com/download/unity)
+2. Import `FirebaseDatabase.unitypackage` via **Assets > Import Package > Custom Package**
+3. Add your `google-services.json` (Android) or `GoogleService-Info.plist` (iOS) to the project
+
+## Connect to Lark
+
+Pass your Lark URL when getting the database instance:
+
+```csharp
+using Firebase.Database;
+
+// Change this from https://PROJECT_ID.firebaseio.com
+FirebaseDatabase database =
+    FirebaseDatabase.GetInstance("https://your-lark-project-id.larkdb.net");
+
+DatabaseReference myRef = database.GetReference("players/alice");
+```
+
+If your config file already has the database URL, you can update it there instead and use `FirebaseDatabase.DefaultInstance` directly.
+
+## Project settings
+
+Before connecting, make sure your Lark project is configured correctly:
+
+1. **Allow Legacy Firebase** must be enabled in your Lark project settings. This turns on the Firebase wire protocol.
+2. If your Firebase app stores many independent data silos under path prefixes (game rooms, workspaces, etc.), see [Database routing](/firebase/database-routing) for options on splitting them into separate Lark databases.

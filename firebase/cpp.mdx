@@ -1,0 +1,43 @@
+---
+title: "C++ SDK"
+description: "Use the Firebase C++ SDK with Lark"
+---
+
+Point your Firebase C++ SDK at Lark by passing your Lark URL to `Database::GetInstance()`. Everything else — listeners, writes, queries — works without changes.
+
+## Setup
+
+Add the Firebase C++ SDK to your project. Follow the [Firebase C++ setup guide](https://firebase.google.com/docs/cpp/setup) for your platform (Android NDK, iOS, or desktop).
+
+Make sure the Realtime Database library is linked:
+- **Android**: `firebase_database` in your `CMakeLists.txt`
+- **iOS**: `firebase.framework` and `firebase_database.framework`
+- **Desktop**: `firebase_database` library
+
+## Connect to Lark
+
+Pass your Lark URL when getting the database instance:
+
+```cpp
+#include "firebase/app.h"
+#include "firebase/database.h"
+
+firebase::App* app = firebase::App::Create();
+
+// Change this from https://PROJECT_ID.firebaseio.com
+firebase::database::Database* database =
+    firebase::database::Database::GetInstance(
+        app, "https://your-lark-project-id.larkdb.net");
+
+firebase::database::DatabaseReference ref =
+    database->GetReference("players/alice");
+```
+
+If your `google-services.json` (Android) or `GoogleService-Info.plist` (iOS) already has the database URL, you can update it there instead and use `Database::GetInstance(app)` without a URL argument.
+
+## Project settings
+
+Before connecting, make sure your Lark project is configured correctly:
+
+1. **Allow Legacy Firebase** must be enabled in your Lark project settings. This turns on the Firebase wire protocol.
+2. If your Firebase app stores many independent data silos under path prefixes (game rooms, workspaces, etc.), see [Database routing](/firebase/database-routing) for options on splitting them into separate Lark databases.

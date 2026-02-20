@@ -42,6 +42,14 @@ Sorts children by the value of a nested child field. This is the one you'll use 
 db.ref('players').orderByChild('score')
 ```
 
+You can also sort by deeply nested fields using a path:
+
+```typescript
+// Sort players by a nested field
+db.ref('players').orderByChild('stats/hp')
+db.ref('users').orderByChild('address/city')
+```
+
 If a child doesn't have the specified field, it sorts as if the value is `null` (which comes first in Lark's sort order).
 
 ### Order by priority
@@ -119,6 +127,17 @@ db.ref('players').orderByChild('score').startAt(100).endAt(500)
 db.ref('players').orderByChild('score').startAfter(100)
 ```
 
+### Key tiebreaker
+
+When multiple children have the same sort value, `startAt`, `endAt`, `startAfter`, `endBefore`, and `equalTo` all accept an optional second parameter — a key — to disambiguate. This is essential for pagination over data with duplicate values.
+
+```typescript
+// Two players both have score 250. To start *after* the one with key "alice":
+db.ref('players').orderByChild('score').startAt(250, 'alice').limitToFirst(10)
+```
+
+Without the key parameter, `startAt(250)` would include all children with score 250. With the key, Lark skips past `alice` and starts at the next child with that score (or the next score above it).
+
 ### equalTo
 
 `equalTo` matches exactly one value. It's a shorthand for setting `startAt` and `endAt` to the same value.
@@ -126,6 +145,13 @@ db.ref('players').orderByChild('score').startAfter(100)
 ```typescript
 // Find all players with a score of exactly 250
 db.ref('players').orderByChild('score').equalTo(250)
+```
+
+Combined with `orderByKey`, `equalTo` works as a direct key lookup:
+
+```typescript
+// Look up a specific child by key
+db.ref('players').orderByKey().equalTo('alice')
 ```
 
 ## Combining ordering, limits, and ranges

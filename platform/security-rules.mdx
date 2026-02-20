@@ -13,6 +13,8 @@ You define rules as a JSON object that mirrors the shape of your database. At ea
 - **`.write`** — Can this client write data at this path?
 - **`.validate`** — Is the incoming data valid?
 
+Access is **denied by default**. If no `.read` or `.write` rule is specified at or above a path, the operation is rejected.
+
 Rules evaluate to `true` or `false`. You can use simple booleans or expressions that reference auth state, existing data, and the incoming write.
 
 ```json
@@ -34,11 +36,45 @@ In this example, anyone can read any player's data, but only the player themselv
 
 `.read` and `.write` rules **cascade downward**. If you grant `.read` at `/users`, every child path under `/users` is also readable. A rule at a parent node overrides any restrictive rule on a child — once access is granted, it can't be taken away deeper in the tree.
 
+```json
+{
+  "rules": {
+    "foo": {
+      ".read": "data.child('baz').val() === true",
+      "bar": {
+        ".read": false
+      }
+    }
+  }
+}
+```
+
+Here, the `.read: false` on `/foo/bar` has no effect. If `/foo/baz` is `true`, the parent rule grants read access to all of `/foo` — including `/foo/bar`. Child rules can only grant additional privileges, never revoke them.
+
 <Warning>
 Be intentional about where you place `.read` and `.write` rules. A permissive rule high in the tree grants access to everything below it.
 </Warning>
 
 `.validate` rules are the exception. They do **not** cascade. Every node that has a `.validate` rule must independently pass validation for a write to succeed. This lets you enforce structure at every level of your data.
+
+## Rules are not filters
+
+Rules are evaluated atomically. A read operation fails entirely if there isn't a rule at that location (or a parent) that grants access — even if every individual child is accessible.
+
+```json
+{
+  "rules": {
+    "records": {
+      "rec1": { ".read": true },
+      "rec2": { ".read": false }
+    }
+  }
+}
+```
+
+Reading `/records` fails with `PERMISSION_DENIED`, even though `rec1` is readable. There's no `.read` rule that covers all of `/records`, so the read is denied. To get `rec1`, you must read `/records/rec1` directly.
+
+This is an important design point: rules don't filter results down to what's allowed. They're all-or-nothing at each path.
 
 ## Wildcards
 
@@ -64,12 +100,57 @@ Use `$wildcard` path segments to match any child key. The matched value becomes 
 
 Here, `$roomId` matches any room key and `$messageId` matches any message key. You can reference these variables in expressions — for example, `"auth.uid === $roomId"` to restrict access to the room owner.
 
+<Note>
+Wildcard captures are always strings — even if the key looks like a number. Comparing `$key` to a number directly will always fail. Convert the number to a string first: `$key === newData.val() + ''`.
+</Note>
+
+### Restricting allowed children
+
+You can use a `$other` wildcard alongside named children to reject any unexpected fields:
+
+```json
+{
+  "rules": {
+    "widget": {
+      "title": { ".validate": true },
+      "color": { ".validate": true },
+      "$other": { ".validate": false }
+    }
+  }
+}
+```
+
+Any write that includes a child other than `title` or `color` fails validation.
+
+### Overlapping statements
+
+When both a `$wildcard` rule and a specific named rule match a node, both are evaluated. If either condition is `false`, access is denied.
+
+```json
+{
+  "rules": {
+    "messages": {
+      "$message": {
+        ".read": true,
+        ".write": true
+      },
+      "message1": {
+        ".read": false,
+        ".write": false
+      }
+    }
+  }
+}
+```
+
+Reads to `message1` are denied because the specific `message1` rule evaluates to `false`, even though the `$message` wildcard rule is `true`.
+
 ## Editing rules
 
 You edit your security rules in the Lark dashboard. Go to **Project Settings > Security Rules**, paste or edit your JSON, and click **Publish**. Rules take effect immediately across all connected clients.
 
 <Tip>
-Start with restrictive rules and open access only where you need it. You can always use the rules simulator in the dashboard to test whether a specific operation would be allowed.
+Start with restrictive rules and open access only where you need it.
 </Tip>
 
 ## What's next

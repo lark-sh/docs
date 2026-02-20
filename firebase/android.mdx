@@ -1,0 +1,48 @@
+---
+title: "Android SDK"
+description: "Use the Firebase Android SDK with Lark"
+---
+
+Point your Firebase Android SDK at Lark by passing your Lark URL to `FirebaseDatabase.getInstance()`. Everything else — listeners, writes, queries — works without changes.
+
+## Setup
+
+Add the Realtime Database dependency to your module's `build.gradle`:
+
+```groovy
+dependencies {
+    implementation 'com.google.firebase:firebase-database'
+}
+```
+
+## Connect to Lark
+
+Pass your Lark URL when getting the database instance:
+
+<CodeGroup>
+```kotlin Kotlin
+import com.google.firebase.database.FirebaseDatabase
+
+// Change this from https://PROJECT_ID.firebaseio.com
+val database = FirebaseDatabase.getInstance("https://your-lark-project-id.larkdb.net")
+val myRef = database.getReference("players/alice")
+```
+
+```java Java
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.DatabaseReference;
+
+// Change this from https://PROJECT_ID.firebaseio.com
+FirebaseDatabase database = FirebaseDatabase.getInstance("https://your-lark-project-id.larkdb.net");
+DatabaseReference myRef = database.getReference("players/alice");
+```
+</CodeGroup>
+
+If your `google-services.json` already has the `databaseURL` field, you can update it there instead and use `FirebaseDatabase.getInstance()` without arguments.
+
+## Project settings
+
+Before connecting, make sure your Lark project is configured correctly:
+
+1. **Allow Legacy Firebase** must be enabled in your Lark project settings. This turns on the Firebase wire protocol.
+2. If your Firebase app stores many independent data silos under path prefixes (game rooms, workspaces, etc.), see [Database routing](/firebase/database-routing) for options on splitting them into separate Lark databases.

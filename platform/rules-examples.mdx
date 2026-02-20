@@ -208,6 +208,38 @@ The `timestamp` validation ensures the timestamp is set to the server's current 
 Write-once data is perfect for audit logs, game events, chat messages, or any data that should be immutable after creation.
 </Tip>
 
+## Query-based access control
+
+Restrict reads so clients must include specific query parameters. This prevents clients from downloading an entire collection when they should only access a subset.
+
+```json
+{
+  "rules": {
+    "orders": {
+      ".read": "auth !== null &&
+                query.orderByChild === 'userId' &&
+                query.equalTo === auth.uid"
+    }
+  }
+}
+```
+
+Clients must query by their own user ID to read orders. A bare `db.ref('orders').on('value', ...)` without the filter is rejected. This is useful when you have a shared collection but each user should only see their own records.
+
+You can also enforce size limits to prevent clients from downloading too much data at once:
+
+```json
+{
+  "rules": {
+    "feed": {
+      ".read": "auth !== null &&
+                query.orderByKey &&
+                query.limitToFirst <= 100"
+    }
+  }
+}
+```
+
 ## What's next
 
 <CardGroup cols={2}>

@@ -1,0 +1,43 @@
+---
+title: "iOS SDK"
+description: "Use the Firebase Apple SDK with Lark"
+---
+
+Point your Firebase Apple SDK at Lark by passing your Lark URL to `Database.database(url:)`. Everything else — observers, writes, queries — works without changes.
+
+## Setup
+
+Add Firebase Realtime Database via Swift Package Manager or CocoaPods:
+
+<CodeGroup>
+```swift Swift Package Manager
+// In Xcode: File > Add Package Dependencies
+// Enter: https://github.com/firebase/firebase-ios-sdk
+// Select "FirebaseDatabase"
+```
+
+```ruby CocoaPods
+pod 'Firebase/Database'
+```
+</CodeGroup>
+
+## Connect to Lark
+
+Pass your Lark URL when getting the database instance:
+
+```swift
+import FirebaseDatabase
+
+// Change this from https://PROJECT_ID.firebaseio.com
+let database = Database.database(url: "https://your-lark-project-id.larkdb.net")
+let ref = database.reference()
+```
+
+If your `GoogleService-Info.plist` already has the `DATABASE_URL` field, you can update it there instead and use `Database.database()` without arguments.
+
+## Project settings
+
+Before connecting, make sure your Lark project is configured correctly:
+
+1. **Allow Legacy Firebase** must be enabled in your Lark project settings. This turns on the Firebase wire protocol.
+2. If your Firebase app stores many independent data silos under path prefixes (game rooms, workspaces, etc.), see [Database routing](/firebase/database-routing) for options on splitting them into separate Lark databases.

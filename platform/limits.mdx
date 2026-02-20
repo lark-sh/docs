@@ -1,53 +1,40 @@
 ---
-title: "Validation and limits"
-description: "Size limits, key rules, and data validation constraints"
+title: "Limits"
+description: "Size limits, key rules, and operational constraints"
 ---
 
-Lark enforces a set of constraints on keys, values, and write payloads. This page is a reference for all of them.
+Lark enforces the same limits as Firebase Realtime Database, with one exception: there are no rate limits on [volatile](/platform/volatile) writes or events.
 
-## Key rules
+## Data tree
 
-Keys are the path segments that identify children in the [JSON tree](/platform/data-structure). Every key must follow these rules:
+### Keys
 
-| Constraint | Detail |
-|-----------|--------|
+Keys are the path segments that identify children in the [JSON tree](/platform/data-structure).
+
+| Constraint | Limit |
+|---|---|
 | Max length | **768 UTF-8 bytes** |
-| Forbidden characters | `.` `$` `#` `[` `]` `/` |
+| Forbidden characters | `.` `$` `#` `[` `]` `/` newlines |
 | Control characters | ASCII 0x00–0x1F and 0x7F are not allowed |
-| Reserved prefix | Keys starting with `.` are reserved for Lark internal use |
-
-The reserved `.` prefix is used by Lark for special system keys:
-
-- `.priority` — Priority metadata for ordering
-- `.value` — Used in conjunction with `.priority` to set both a value and a priority
-- `.sv` — Server value placeholder (e.g., `{ ".sv": "timestamp" }`)
+| Reserved prefix | Keys starting with `.` are reserved for internal use (`.priority`, `.value`, `.sv`) |
+| Max depth | **32 levels** — each path must be fewer than 32 levels deep |
 
 <Warning>
 Characters like `.` and `$` are common in many systems (email addresses, MongoDB field names, template strings) but are forbidden in Lark keys. If you need to store an email as a key, encode it first — for example, replace `.` with `,` or use a hash.
 </Warning>
 
-## Value limits
+### Values
 
 | Constraint | Limit |
-|-----------|-------|
-| String value max size | **10 MB** |
-| Total write payload max size | **16 MB** (JSON-encoded) |
-| Volatile write max size | **2 KB** |
+|---|---|
+| Max string size | **10 MB** (UTF-8 encoded) |
 
-The write payload limit applies to the entire JSON body of a single write operation — including `set`, `update`, and `push`. If you're doing a multi-path update, the 16 MB limit covers all the paths combined.
-
-Volatile writes are intentionally small. They're designed for high-frequency, fire-and-forget data like cursor positions and player movement — not for large payloads. See [volatile paths](/platform/volatile) for more detail.
-
-<Note>
-The 16 MB limit is on the JSON-encoded payload, not the in-memory size. JSON encoding adds overhead for keys, quotes, and structural characters, so the effective data limit is somewhat less than 16 MB.
-</Note>
-
-## Data types
+### Data types
 
 Lark stores JSON. The supported value types are:
 
 | Type | Example |
-|------|---------|
+|---|---|
 | String | `"hello"` |
 | Number | `42`, `3.14`, `-1` |
 | Boolean | `true`, `false` |
@@ -56,7 +43,7 @@ Lark stores JSON. The supported value types are:
 
 Writing `null` to a path deletes it. There's no separate "delete" wire operation — a null write and a remove are the same thing.
 
-### A note on arrays
+#### A note on arrays
 
 Lark doesn't have a native array type. If you write a JSON array, Lark converts it to an object with integer keys:
 
@@ -68,24 +55,66 @@ await db.ref('items').set(['apple', 'banana', 'cherry']);
 // { "0": "apple", "1": "banana", "2": "cherry" }
 ```
 
-This works, but it's fragile. If two clients modify the array at the same time, they'll overwrite each other's changes because they're both targeting the same integer keys. For lists that multiple clients might modify, use `push` to generate unique keys instead.
+This works, but it's fragile. If two clients modify the array at the same time, they'll overwrite each other's changes. For lists that multiple clients might modify, use `push` to generate unique keys instead.
 
-<Tip>
-Prefer `push` over arrays for any list that grows over time or that multiple clients write to. Push keys are unique and chronologically sortable, so you get natural ordering without collision risk.
-</Tip>
+## Reads
+
+| Constraint | Limit |
+|---|---|
+| Max single response size | **256 MB** |
+| Max nodes in a listened/queried path | **75 million** (cumulative) |
+| Max query duration | **15 minutes** |
+
+If you need to read data larger than 256 MB at a single location, paginate with a query or use shallow reads.
+
+For paths with more than 75 million nodes, listen to or query more specific child paths instead of the entire subtree.
+
+## Writes
+
+| Constraint | Limit |
+|---|---|
+| Write rate | **1,000 writes/second** per database |
+| Volatile write rate | **No limit** |
+| Max write payload (SDK) | **16 MB** (JSON-encoded) |
+| Max write payload (REST API) | **256 MB** |
+| Bytes written | **64 MB/minute** per database |
+| Volatile write max size | **2 KB** |
+
+The write payload limit applies to the entire JSON body of a single write operation — including `set`, `update`, and `push`. Multi-path updates are subject to the same limit across all paths combined.
+
+<Note>
+The 16 MB limit is on the JSON-encoded payload, not the in-memory size. JSON encoding adds overhead for keys, quotes, and structural characters, so the effective data limit is somewhat less than 16 MB.
+</Note>
+
+### Volatile exceptions
+
+Volatile paths have **no rate limit** on writes per second or events per second. The 1,000 writes/second and 64 MB/minute limits apply only to regular (persisted) writes. The 2 KB per-write size limit still applies to volatile writes.
+
+## Connections
+
+| Constraint | Limit |
+|---|---|
+| Simultaneous connections | **200,000** per database |
+
+A simultaneous connection is one mobile device, browser tab, or server app connected to the database. This isn't the same as your total user count — users don't all connect at once. An app with millions of monthly users typically has far fewer simultaneous connections.
+
+To scale beyond 200,000 connections, use multiple databases. See [database routing](/firebase/database-routing) for patterns on splitting data across databases.
 
 ## Summary
 
-Here's everything at a glance:
-
-| Category | Rule | Limit |
-|----------|------|-------|
-| Key length | Max UTF-8 bytes | 768 |
-| Key characters | Forbidden | `. $ # [ ] /` |
-| Key characters | Forbidden | ASCII control chars (0x00–0x1F, 0x7F) |
-| Key prefix | Reserved | `.` (system use) |
-| String value | Max size | 10 MB |
-| Write payload | Max size (JSON-encoded) | 16 MB |
-| Volatile write | Max size | 2 KB |
-| Data types | Supported | string, number, boolean, object, null |
-| Arrays | Behavior | Converted to objects with integer keys |
+| Category | Constraint | Limit |
+|---|---|---|
+| Keys | Max length | 768 UTF-8 bytes |
+| Keys | Forbidden characters | `. $ # [ ] /` newlines, control chars |
+| Keys | Max depth | 32 levels |
+| Values | Max string size | 10 MB |
+| Reads | Max response size | 256 MB |
+| Reads | Max nodes in queried path | 75 million |
+| Reads | Max query duration | 15 minutes |
+| Writes | Write rate | 1,000/sec per database |
+| Writes | Max payload (SDK) | 16 MB |
+| Writes | Max payload (REST) | 256 MB |
+| Writes | Bytes written | 64 MB/min per database |
+| Writes | Volatile max size | 2 KB |
+| Writes | Volatile rate limit | None |
+| Connections | Simultaneous | 200,000 per database |

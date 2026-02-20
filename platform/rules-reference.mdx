@@ -13,10 +13,10 @@ These variables are available in every rule expression.
 | --- | --- | --- |
 | `auth` | object \| null | The authenticated user. `null` if the client is unauthenticated. |
 | `auth.uid` | string | The unique ID of the authenticated user. |
-| `auth.provider` | string | The authentication provider (e.g., `"google"`, `"anonymous"`). |
-| `auth.token` | object | Custom claims attached to the user's auth token. |
+| `auth.provider` | string | The authentication provider (e.g., `"google"`, `"anonymous"`, `"password"`, `"facebook"`, `"github"`, `"twitter"`). |
+| `auth.token` | object | The contents of the auth token, including any custom claims. |
 | `data` | snapshot | A snapshot of the **current** data at this path, before the write. |
-| `newData` | snapshot | A snapshot of the data that **would exist** after the write. Only available in `.write` and `.validate` rules. |
+| `newData` | snapshot | A snapshot of the data that **would exist** after the write. The merged result of new data and existing data. Only available in `.write` and `.validate` rules. |
 | `root` | snapshot | A snapshot of the root of the entire database. Use this to read data at other paths. |
 | `now` | number | The current server timestamp in milliseconds since epoch. |
 | `$wildcards` | string | Path segment captures. For example, a rule at `/users/$userId` makes `$userId` available as a string variable containing the matched key. |
@@ -31,12 +31,16 @@ The `data`, `newData`, and `root` variables are all snapshots. You can call thes
 
 | Method | Returns | Description |
 | --- | --- | --- |
-| `val()` | any | Returns the primitive value (string, number, boolean, null) at this snapshot. |
-| `exists()` | boolean | Returns `true` if this snapshot contains any data (is not null). |
+| `val()` | any | Returns the primitive value (string, number, boolean, null) at this snapshot. For snapshots with children, use `child()` to access nested values. |
+| `exists()` | boolean | Returns `true` if this snapshot contains any data. Equivalent to `val() != null`. |
 | `hasChild(path)` | boolean | Returns `true` if the specified child path exists. `path` can be a single key or a slash-separated path. |
-| `hasChildren(keys)` | boolean | Returns `true` if **all** of the specified child keys exist. `keys` is an array of strings. |
-| `parent()` | snapshot | Returns a snapshot of the parent node. |
-| `child(path)` | snapshot | Returns a snapshot of the child at the given path. `path` can be a single key or a slash-separated path. |
+| `hasChildren(keys)` | boolean | Returns `true` if **all** of the specified child keys exist. `keys` is an array of strings. With no arguments, returns `true` if the snapshot has any children. |
+| `parent()` | snapshot | Returns a snapshot of the parent node. Fails if called on the root. |
+| `child(path)` | snapshot | Returns a snapshot of the child at the given path. `path` can be a single key or a deeper slash-separated path (e.g., `'address/city'`). If the child doesn't exist, returns an empty snapshot. |
+| `getPriority()` | string \| number \| null | Returns the priority of the data at this snapshot. |
+| `isString()` | boolean | Returns `true` if the value is a string. |
+| `isNumber()` | boolean | Returns `true` if the value is a number. |
+| `isBoolean()` | boolean | Returns `true` if the value is a boolean. |
 
 ### Examples
 
@@ -52,6 +56,12 @@ data.parent().child('status').val() === 'active'
 
 // Look up data at another path entirely
 root.child('admins/' + auth.uid).exists()
+
+// Check a deeply nested child
+data.child('stats/hp').val() > 0
+
+// Type-check incoming data
+newData.child('name').isString() && newData.child('score').isNumber()
 ```
 
 ## String methods
@@ -60,11 +70,14 @@ These methods are available on any string value in a rule expression, including 
 
 | Method / Property | Returns | Description |
 | --- | --- | --- |
-| `contains(string)` | boolean | Returns `true` if the string contains the given substring. |
-| `beginsWith(string)` | boolean | Returns `true` if the string starts with the given prefix. |
-| `endsWith(string)` | boolean | Returns `true` if the string ends with the given suffix. |
-| `matches(regex)` | boolean | Returns `true` if the string matches the given regular expression. The regex follows standard regex syntax. |
 | `length` | number | The length of the string. This is a property, not a method — no parentheses. |
+| `contains(substring)` | boolean | Returns `true` if the string contains the given substring. |
+| `beginsWith(substring)` | boolean | Returns `true` if the string starts with the given prefix. |
+| `endsWith(substring)` | boolean | Returns `true` if the string ends with the given suffix. |
+| `replace(substring, replacement)` | string | Returns a copy of the string with **all** instances of `substring` replaced by `replacement`. |
+| `toLowerCase()` | string | Returns the string converted to lower case. |
+| `toUpperCase()` | string | Returns the string converted to upper case. |
+| `matches(regex)` | boolean | Returns `true` if the string matches the given regular expression. |
 
 ### Examples
 
@@ -76,7 +89,13 @@ newData.child('username').val().length >= 3
 newData.child('email').val().matches(/^[^@]+@[^@]+\.[^@]+$/)
 
 // Check a string prefix
-newData.child('type').val().beginsWith('game_')
+auth.token.identifier.beginsWith('internal-')
+
+// Escape periods for use as keys
+newData.child('email').val().replace('.', '%2E')
+
+// Case-insensitive lookup
+root.child('users').child(auth.token.identifier.toLowerCase()).exists()
 ```
 
 ## Operators
@@ -87,12 +106,16 @@ Standard operators work inside rule expressions.
 
 | Operator | Description |
 | --- | --- |
-| `===` | Strict equality |
+| `===` | Strict equality (type and value) |
 | `!==` | Strict inequality |
 | `<` | Less than |
 | `>` | Greater than |
 | `<=` | Less than or equal to |
 | `>=` | Greater than or equal to |
+
+<Note>
+`==` is treated as `===` and `!=` is treated as `!==` in rules. Both are strict comparisons — there is no loose equality.
+</Note>
 
 ### Logical
 
@@ -107,7 +130,7 @@ Standard operators work inside rule expressions.
 | Operator | Description |
 | --- | --- |
 | `+` | Addition (also string concatenation) |
-| `-` | Subtraction |
+| `-` | Subtraction / negation |
 | `*` | Multiplication |
 | `/` | Division |
 | `%` | Modulo |
@@ -119,24 +142,69 @@ Standard operators work inside rule expressions.
 | `? :` | Conditional expression. `condition ? valueIfTrue : valueIfFalse` |
 
 <Tip>
-You can use the `+` operator to build dynamic paths for `child()` lookups. For example: `root.child('users/' + auth.uid + '/role').val() === 'admin'`.
+Use the `+` operator to build dynamic paths for `child()` lookups: `root.child('users/' + auth.uid + '/role').val() === 'admin'`.
 </Tip>
 
-## Type checking
+## Query-based rules
 
-To validate that incoming data is a specific type, compare the result of `val()` using JavaScript-style type checks.
+You can restrict what queries clients are allowed to run by referencing `query.` expressions in your rules. This lets you enforce that clients include certain filters or limits.
 
-| Check | Expression |
-| --- | --- |
-| String | `newData.isString()` |
-| Number | `newData.isNumber()` |
-| Boolean | `newData.isBoolean()` |
+### Query variables
+
+| Expression | Type | Description |
+| --- | --- | --- |
+| `query.orderByKey` | boolean | `true` if the query is ordered by key. |
+| `query.orderByPriority` | boolean | `true` if the query is ordered by priority. |
+| `query.orderByValue` | boolean | `true` if the query is ordered by value. |
+| `query.orderByChild` | string \| null | The child key being ordered by, or `null` if not ordered by a child. |
+| `query.startAt` | string \| number \| boolean \| null | The start bound of the query, or `null` if none. |
+| `query.endAt` | string \| number \| boolean \| null | The end bound of the query, or `null` if none. |
+| `query.equalTo` | string \| number \| boolean \| null | The equality filter of the query, or `null` if none. |
+| `query.limitToFirst` | number \| null | The limit-to-first value, or `null` if none. |
+| `query.limitToLast` | number \| null | The limit-to-last value, or `null` if none. |
 
 ### Examples
 
+Restrict access to a collection so clients can only read their own items:
+
+```json
+{
+  "rules": {
+    "baskets": {
+      ".read": "auth.uid !== null &&
+                query.orderByChild === 'owner' &&
+                query.equalTo === auth.uid"
+    }
+  }
+}
 ```
-// Ensure 'name' is a string and 'score' is a number
-".validate": "newData.child('name').isString() && newData.child('score').isNumber()"
+
+A query that includes the required parameters succeeds:
+
+```typescript
+db.ref('baskets')
+  .orderByChild('owner')
+  .equalTo(auth.currentUser.uid)
+  .on('value', callback); // Succeeds
+```
+
+A query without the parameters fails:
+
+```typescript
+db.ref('baskets')
+  .on('value', callback); // PERMISSION_DENIED
+```
+
+Limit how much data a client can download:
+
+```json
+{
+  "rules": {
+    "messages": {
+      ".read": "query.orderByKey && query.limitToFirst <= 1000"
+    }
+  }
+}
 ```
 
 ## What's next

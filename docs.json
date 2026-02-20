@@ -83,7 +83,12 @@
             "group": "Getting started",
             "pages": [
               "firebase/overview",
-              "firebase/setup"
+              "firebase/javascript",
+              "firebase/android",
+              "firebase/ios",
+              "firebase/flutter",
+              "firebase/cpp",
+              "firebase/unity"
             ]
           },
           {
@@ -158,8 +163,8 @@
     }
   },
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "/logo/light.png",
+    "dark": "/logo/dark.png"
   },
   "navbar": {
     "links": [

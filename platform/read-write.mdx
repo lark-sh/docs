@@ -86,6 +86,20 @@ const newRef = await messagesRef.push({
 console.log(newRef.key); // Something like '-OPNxyz123abc'
 ```
 
+You can also call `push()` without any data to generate a key without writing anything yet. This is useful when you need the key upfront — for example, to use it in a multi-path update:
+
+```typescript
+const newRef = messagesRef.push();
+console.log(newRef.key); // Generated key, nothing written yet
+
+// Use the key in a set() or multi-path update later
+await newRef.set({
+  user: 'alice',
+  text: 'Hello, world!',
+  timestamp: ServerValue.TIMESTAMP
+});
+```
+
 Push keys are designed to sort chronologically. If two clients push at the same time, both writes succeed and the keys maintain a consistent order. No conflicts, no overwrites.
 
 <Note>
