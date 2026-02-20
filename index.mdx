@@ -52,8 +52,6 @@ db.ref('players').on('value', (snapshot) => {
 await db.ref('players/alice/score').set(42);
 ```
 
-That's it. No REST endpoints to build, no WebSocket plumbing to manage, no cache invalidation to think about.
-
 ## Get started
 
 <CardGroup cols={2}>
