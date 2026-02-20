@@ -1,9 +1,7 @@
 ---
 title: "Quickstart"
-description: "Create a project and build your first real-time app in minutes"
+description: "Create a project and start building in minutes"
 ---
-
-This guide walks you through creating a Lark project and connecting to it from a JavaScript or TypeScript app.
 
 ## 1. Create a project
 
@@ -13,13 +11,28 @@ In your project's **Settings** page, note your **Project ID**. You'll need it in
 
 <Tip>Enable **Auto Create** in your project settings so databases are created automatically when a client connects. This is the fastest way to get started.</Tip>
 
-## 2. Install the SDK
+## 2. Pick your SDK
+
+<CardGroup cols={2}>
+  <Card title="Lark JS SDK" icon="bolt" href="/lark-sdk/quickstart">
+    The native TypeScript SDK. Lightweight (~20KB), WebTransport support, volatile paths, modern API.
+  </Card>
+  <Card title="Firebase SDKs" icon="fire" href="/firebase/overview">
+    Already using Firebase? Change one URL and your existing code works with Lark. Supports JS, Android, iOS, Flutter, C++, and Unity.
+  </Card>
+</CardGroup>
+
+## 3. A quick example with the Lark SDK
+
+If you're starting fresh, here's what it looks like end-to-end:
+
+### Install
 
 ```bash
 npm install @lark-sh/client
 ```
 
-## 3. Connect and write data
+### Connect and write data
 
 ```typescript
 import { LarkDatabase } from '@lark-sh/client';
@@ -39,15 +52,14 @@ await db.ref('players/alice').set({
 
 The `anonymous: true` option connects without authentication — useful for getting started quickly. You'll add proper auth later.
 
-## 4. Read data
+### Read data
 
 ```typescript
-// Read once
 const snapshot = await db.ref('players/alice').once('value');
 console.log(snapshot.val()); // { name: 'Alice', score: 0 }
 ```
 
-## 5. Subscribe to real-time updates
+### Subscribe to real-time updates
 
 This is where it gets interesting. Subscribe to a path and your callback fires every time the data changes — from any connected client.
 
@@ -63,7 +75,7 @@ await db.ref('players/alice/score').set(42);
 unsubscribe();
 ```
 
-## 6. Clean up
+### Clean up
 
 ```typescript
 await db.disconnect();
