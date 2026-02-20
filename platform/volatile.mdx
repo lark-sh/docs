@@ -1,0 +1,118 @@
+---
+title: "Volatile paths"
+description: "High-frequency, fire-and-forget data for game state and cursors"
+---
+
+Some data changes many times per second — cursor positions, player movement, animation state, drag coordinates. Sending every update through reliable, ordered delivery is overkill. Volatile paths give you a fast lane for this kind of data.
+
+## How volatile paths work
+
+Volatile paths are special paths in your database optimized for high-frequency updates. When you write to a volatile path:
+
+1. The write resolves immediately on the client. There's no waiting for a server acknowledgment.
+2. The server batches and coalesces volatile updates before broadcasting them. If a client writes 60 cursor positions per second, subscribers don't receive all 60. They get the latest value at each broadcast interval.
+3. Only the most recent value for each path is sent. Intermediate states are dropped.
+
+The result is low-latency, low-bandwidth data delivery — perfect for real-time interactions where you only care about the current state.
+
+```typescript
+// Writing to a volatile path — resolves instantly
+db.ref('cursors/alice').set({
+  x: 450,
+  y: 312
+});
+```
+
+## Volatile vs. regular writes
+
+| | Regular writes | Volatile writes |
+|---|---|---|
+| **Acknowledgment** | Server confirms the write | Resolves immediately, no server ack |
+| **Delivery** | Reliable, ordered | Best-effort, latest-value-wins |
+| **Persistence** | Written to durable storage | Written to durable storage |
+| **Broadcast** | Every change is sent to subscribers | Batched and coalesced before broadcast |
+| **Transport** | TCP (WebSocket) or QUIC streams (WebTransport) | TCP (WebSocket) or UDP datagrams (WebTransport) |
+
+<Note>
+Over WebTransport, volatile writes use UDP datagrams — truly unreliable delivery for maximum speed. Over WebSocket, they're sent as regular TCP messages but are still batched and coalesced on the server before broadcast.
+</Note>
+
+## Batching rates
+
+The server broadcasts volatile updates at fixed intervals:
+
+- **WebTransport clients**: ~20 Hz (every 50ms). At most 20 volatile updates per second reach each subscriber.
+- **WebSocket clients**: ~4 Hz (every 250ms). WebSocket's TCP overhead means a slower broadcast cadence to avoid congestion.
+
+This means if you're writing cursor positions 60 times per second, a WebTransport subscriber sees ~20 updates per second and a WebSocket subscriber sees ~4. In both cases, they always get the latest value — not a delayed queue of old positions.
+
+## Size limit
+
+Each volatile write is limited to **2 KB**. Keep your volatile payloads small — coordinates, velocity vectors, flags. If you need to send more, break it into multiple paths.
+
+<Warning>
+The 2 KB limit is enforced per write. If your volatile payload exceeds it, the write will be dropped. Stick to small, focused data — positions, not full game state.
+</Warning>
+
+## Configuring volatile paths
+
+Volatile paths are defined as patterns in your project configuration. You set them in the [Lark dashboard](https://admin.larkdb.net) under **Project Settings > Volatile Paths**.
+
+Patterns use `*` as a wildcard for a single path segment:
+
+```
+cursors/*
+players/*/position
+rooms/*/state/*/transform
+```
+
+When a client connects, the server sends the list of volatile path patterns. The SDK automatically uses volatile delivery for any write that matches a pattern.
+
+<Tip>
+You don't need to change your write code. Once a path is configured as volatile, all writes to matching paths automatically use volatile delivery. The same `set()` and `update()` calls just behave differently under the hood.
+</Tip>
+
+## Volatile snapshots
+
+When you receive a volatile update through a subscription, the snapshot includes extra metadata:
+
+```typescript
+db.ref('cursors/bob').on('value', (snapshot) => {
+  if (snapshot.isVolatile()) {
+    const serverTime = snapshot.getServerTimestamp();
+    const position = snapshot.val();
+
+    // Use server timestamp for interpolation
+    interpolateCursor(position, serverTime);
+  }
+});
+```
+
+- **`snapshot.isVolatile()`** — Returns `true` if this update arrived via volatile delivery.
+- **`snapshot.getServerTimestamp()`** — The server timestamp when the volatile value was broadcast. Use this for interpolation or lag compensation in games.
+
+## When to use volatile paths
+
+Volatile paths are the right choice when:
+
+- The data changes many times per second
+- You only care about the latest value, not every intermediate state
+- Missing an update is acceptable (the next one will arrive shortly)
+
+**Good candidates:**
+- Cursor and pointer positions
+- Player position and velocity in games
+- Typing indicators
+- Drag-and-drop coordinates
+- Animation state and transforms
+- Camera position in collaborative 3D editors
+
+**Bad candidates:**
+- Scores and leaderboards (every increment matters)
+- Inventory and currency (can't afford to miss a change)
+- Chat messages (users expect to see every message)
+- Game actions and events (order and completeness matter)
+
+<Info>
+Volatile paths are not about durability — the data is still persisted. They're about delivery. The tradeoff is that subscribers may not see every intermediate value, but they always see the most recent one.
+</Info>

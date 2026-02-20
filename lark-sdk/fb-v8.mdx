@@ -1,0 +1,141 @@
+---
+title: "Firebase v8 compatibility layer"
+description: "Drop-in Firebase v8 API for the Lark SDK"
+---
+
+# Firebase v8 compatibility layer
+
+If you're migrating from Firebase Realtime Database v8 (the `firebase/database` namespaced API), the Lark SDK includes a compatibility layer that matches the Firebase v8 API surface. This lets you switch to Lark without rewriting your subscription patterns.
+
+## Installation
+
+The compatibility layer ships as a sub-package inside `@lark-sh/client`. No extra installation needed.
+
+```typescript
+import { LarkDatabase } from "@lark-sh/client/fb-v8";
+```
+
+## Key difference: `on()` and `off()`
+
+The biggest API difference between the modern Lark SDK and the Firebase v8 compatibility layer is how subscriptions work.
+
+**Modern Lark SDK** — `on()` returns an unsubscribe function:
+
+```typescript
+import { LarkDatabase } from "@lark-sh/client";
+
+const db = new LarkDatabase("my-project/my-database");
+await db.connect({ anonymous: true });
+
+// on() returns an unsubscribe function
+const unsubscribe = db.ref("scores").on("value", (snapshot) => {
+  console.log(snapshot.val());
+});
+
+// Call it to stop listening
+unsubscribe();
+```
+
+**Firebase v8 compatibility** — `on()` returns the callback, and you use `off()` to stop listening:
+
+```typescript
+import { LarkDatabase } from "@lark-sh/client/fb-v8";
+
+const db = new LarkDatabase("my-project/my-database");
+await db.connect({ anonymous: true });
+
+// on() returns the callback you passed in
+const callback = db.ref("scores").on("value", (snapshot) => {
+  console.log(snapshot.val());
+});
+
+// Use off() to stop listening — pass the event type and callback
+db.ref("scores").off("value", callback);
+```
+
+## Side-by-side comparison
+
+| Operation | Modern (`@lark-sh/client`) | Firebase v8 compat (`@lark-sh/client/fb-v8`) |
+|---|---|---|
+| Subscribe | `const unsub = ref.on('value', cb)` | `const cb = ref.on('value', cb)` |
+| Unsubscribe | `unsub()` | `ref.off('value', cb)` |
+| Unsubscribe all for event | Not applicable | `ref.off('value')` |
+| Unsubscribe all | Not applicable | `ref.off()` |
+| Return value of `on()` | Unsubscribe function | The callback itself |
+
+## Context parameter
+
+The Firebase v8 API supports a `context` parameter for binding `this` inside your callback. The compatibility layer supports this too:
+
+```typescript
+import { LarkDatabase } from "@lark-sh/client/fb-v8";
+
+const db = new LarkDatabase("my-project/my-database");
+await db.connect({ anonymous: true });
+
+class ScoreTracker {
+  scores: Record<string, number> = {};
+
+  startListening(ref: ReturnType<LarkDatabase["ref"]>) {
+    ref.on(
+      "child_added",
+      function (this: ScoreTracker, snapshot) {
+        this.scores[snapshot.key] = snapshot.val();
+      },
+      this // context parameter — binds `this` inside the callback
+    );
+  }
+
+  stopListening(ref: ReturnType<LarkDatabase["ref"]>) {
+    ref.off("child_added");
+  }
+}
+```
+
+## When to use the compatibility layer
+
+Use `@lark-sh/client/fb-v8` when:
+
+- **You're migrating a Firebase v8 codebase** and don't want to rewrite every `on()`/`off()` call pattern.
+- **You have shared libraries or utilities** that expect the Firebase v8 subscription API.
+- **You need `off()` semantics** like removing all listeners for a specific event type with a single call.
+
+Use the modern `@lark-sh/client` when:
+
+- **You're starting a new project.** The unsubscribe-function pattern is cleaner and less error-prone.
+- **You're using React, Vue, or Svelte.** Framework cleanup hooks work naturally with unsubscribe functions.
+- **You want the simplest API.** No need to track callback references or worry about matching the right callback in `off()`.
+
+<Tip>
+You can use both imports in the same project during a migration. They share the same underlying connection, so you won't create duplicate connections.
+</Tip>
+
+## Migration path
+
+If you decide to migrate from the compatibility layer to the modern API later, the changes are mechanical:
+
+```typescript
+// Before (fb-v8)
+import { LarkDatabase } from "@lark-sh/client/fb-v8";
+
+const callback = ref.on("value", (snapshot) => {
+  // handle data
+});
+
+// Later...
+ref.off("value", callback);
+```
+
+```typescript
+// After (modern)
+import { LarkDatabase } from "@lark-sh/client";
+
+const unsubscribe = ref.on("value", (snapshot) => {
+  // handle data
+});
+
+// Later...
+unsubscribe();
+```
+
+The rest of the API — `set()`, `update()`, `remove()`, `once()`, `transaction()`, queries, OnDisconnect — is identical between the two.

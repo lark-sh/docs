@@ -1,0 +1,160 @@
+---
+title: "OnDisconnect"
+description: "Queue operations that run when a client disconnects"
+---
+
+# OnDisconnect
+
+OnDisconnect operations let you write data to the server **when the client disconnects**. The server executes these writes even if the client crashes, closes the browser tab, or loses network without a clean goodbye.
+
+This is the building block for presence systems, cleanup logic, and any scenario where you need the server to act on behalf of a client that's gone.
+
+## Creating OnDisconnect operations
+
+Call `ref.onDisconnect()` to get an `OnDisconnect` object, then chain a write method:
+
+```typescript
+import { LarkDatabase, ServerValue } from "@lark-sh/client";
+
+const db = new LarkDatabase("my-project/my-database");
+await db.connect({ anonymous: true });
+
+// When this client disconnects, set "online" to false
+await db.ref("users/alice/online").onDisconnect().set(false);
+```
+
+Every method returns a promise that resolves when the server has acknowledged and registered the operation.
+
+## Methods
+
+### `.set(value)`
+
+Sets a value when the client disconnects:
+
+```typescript
+await db.ref("users/alice/status").onDisconnect().set("offline");
+```
+
+### `.update(values)`
+
+Performs a shallow merge when the client disconnects:
+
+```typescript
+await db.ref("users/alice").onDisconnect().update({
+  online: false,
+  lastSeen: ServerValue.TIMESTAMP,
+});
+```
+
+### `.remove()`
+
+Deletes data when the client disconnects:
+
+```typescript
+await db.ref("sessions/session-abc").onDisconnect().remove();
+```
+
+### `.setWithPriority(value, priority)`
+
+Sets a value with a priority when the client disconnects:
+
+```typescript
+await db.ref("queue/task-1").onDisconnect().setWithPriority("abandoned", 0);
+```
+
+### `.cancel()`
+
+Cancels a previously registered OnDisconnect operation:
+
+```typescript
+const onDisconnectRef = db.ref("users/alice/online").onDisconnect();
+
+// Register it
+await onDisconnectRef.set(false);
+
+// Changed our mind — cancel it
+await onDisconnectRef.cancel();
+```
+
+## Presence system example
+
+The most common use case for OnDisconnect is a presence system — tracking which users are currently online. Here's a complete implementation:
+
+```typescript
+import { LarkDatabase, ServerValue } from "@lark-sh/client";
+
+const db = new LarkDatabase("my-project/my-database");
+await db.connect({ token: "user-jwt-token" });
+
+const uid = db.auth!.uid;
+const userStatusRef = db.ref(`users/${uid}`);
+
+// Watch connection state
+db.ref(".info/connected").on("value", async (snapshot) => {
+  if (!snapshot.val()) {
+    // We're offline — nothing to do, the server will handle it
+    return;
+  }
+
+  // We just connected (or reconnected).
+  // Register what should happen when we disconnect.
+  await userStatusRef.onDisconnect().update({
+    online: false,
+    lastSeen: ServerValue.TIMESTAMP,
+  });
+
+  // Now set ourselves as online
+  await userStatusRef.update({
+    online: true,
+    lastSeen: ServerValue.TIMESTAMP,
+  });
+});
+```
+
+<Note>
+The order matters in this example. Register the OnDisconnect operation **before** writing your online status. This avoids a race condition where you set `online: true` but the connection drops before the OnDisconnect is registered.
+</Note>
+
+### Why subscribe to `.info/connected`?
+
+You might wonder why we don't just run the setup once. The reason is **reconnection**. If the client loses its connection and reconnects, previous OnDisconnect operations are cleared. By listening to `.info/connected`, you re-register the OnDisconnect handler every time the connection is re-established.
+
+### Displaying presence
+
+Other clients can subscribe to presence data:
+
+```typescript
+// Watch a specific user's online status
+const unsubscribe = db.ref("users/bob/online").on("value", (snapshot) => {
+  if (snapshot.val()) {
+    console.log("Bob is online");
+  } else {
+    console.log("Bob is offline");
+  }
+});
+
+// Or watch all users
+const unsubAll = db.ref("users").on("child_changed", (snapshot) => {
+  const user = snapshot.val();
+  console.log(`${snapshot.key} is ${user.online ? "online" : "offline"}`);
+});
+```
+
+## Cleanup on disconnect
+
+Beyond presence, OnDisconnect is useful for any cleanup that should happen when a client leaves:
+
+```typescript
+// Remove a player from a game lobby
+await db.ref(`lobbies/lobby-1/players/${uid}`).onDisconnect().remove();
+
+// Release a lock
+await db.ref(`locks/document-42`).onDisconnect().remove();
+
+// Mark a task as abandoned
+await db.ref(`tasks/task-99/assignee`).onDisconnect().set(null);
+```
+
+<Warning>
+OnDisconnect operations run on the server, so they're limited to simple write operations (`set`, `update`, `remove`). You can't run transactions or custom logic in an OnDisconnect handler.
+</Warning>

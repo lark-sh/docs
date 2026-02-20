@@ -1,0 +1,37 @@
+---
+title: "Security rules editor"
+description: "Edit and deploy your security rules from the dashboard"
+---
+
+Security rules are edited in your project's **Settings** page, in the right-hand panel.
+
+## Writing rules
+
+The editor supports JSON5 syntax — comments, trailing commas, and unquoted keys are all valid.
+
+Write your rules, then click **Save Rules**. The dashboard validates your rules before saving. If there is a syntax error, you will see it immediately.
+
+Rules take effect as soon as they are saved. There is no separate deploy step.
+
+<Tip>Start with permissive rules while developing, then tighten them before going to production.</Tip>
+
+## Example
+
+Here is a basic rule set that allows anyone to read player data, but only lets players write their own data:
+
+```json
+{
+  "rules": {
+    "players": {
+      "$playerId": {
+        ".read": true,
+        ".write": "auth.uid === $playerId"
+      }
+    }
+  }
+}
+```
+
+## Learn more
+
+For the complete rules language reference — including path variables, built-in variables, and expression syntax — see [Security rules](/platform/security-rules).

@@ -1,0 +1,139 @@
+---
+title: "Authentication"
+description: "Authenticate users with the Lark SDK"
+---
+
+# Authentication
+
+Lark supports anonymous and token-based authentication. You choose how to authenticate when you connect, and you can change authentication state after connecting.
+
+## Anonymous authentication
+
+The simplest option. Connect without any user identity:
+
+```typescript
+import { LarkDatabase } from "@lark-sh/client";
+
+const db = new LarkDatabase("my-project/my-database");
+
+await db.connect({ anonymous: true });
+```
+
+Anonymous connections are assigned a temporary UID by the server. They can read and write data according to your security rules, but they have no persistent identity across sessions.
+
+## Token-based authentication
+
+For identified users, pass a JWT at connect time:
+
+```typescript
+await db.connect({
+  token: "eyJhbGciOiJIUzI1NiIs...",
+});
+```
+
+The token contains the user's identity (UID, provider, custom claims) and is validated by the Lark server. Your security rules can then reference `auth.uid`, `auth.provider`, and any custom claims.
+
+<Tip>
+See the [platform authentication docs](/platform/auth) for details on how to generate JWTs for your users.
+</Tip>
+
+## Changing auth state after connecting
+
+You don't have to authenticate at connect time. You can sign in or out at any point after connecting.
+
+### `db.signIn(token)`
+
+Authenticate with a new token. If you were previously anonymous or signed in as a different user, the auth state updates:
+
+```typescript
+// Start anonymous
+await db.connect({ anonymous: true });
+
+// Later, sign in with a token
+await db.signIn("eyJhbGciOiJIUzI1NiIs...");
+```
+
+### `db.signOut()`
+
+Reverts to anonymous authentication:
+
+```typescript
+await db.signOut();
+```
+
+<Note>
+After calling `signOut()`, the connection stays open. You're still connected, just without user identity. Any subscriptions that depend on authenticated access (via security rules) may stop receiving updates.
+</Note>
+
+## The `auth` property
+
+Access the current authentication state at any time:
+
+```typescript
+// When signed in
+console.log(db.auth);
+// { uid: "user-123", provider: "custom", token: "eyJ..." }
+
+// When anonymous
+console.log(db.auth);
+// null
+```
+
+| Property | Type | Description |
+|---|---|---|
+| `uid` | `string` | The user's unique identifier. |
+| `provider` | `string` | The authentication provider (e.g., `"custom"`, `"google"`). |
+| `token` | `string` | The raw JWT. |
+
+## Listening for auth changes
+
+Use `db.onAuthStateChanged(callback)` to react to sign-in and sign-out events:
+
+```typescript
+const unsubscribe = db.onAuthStateChanged((auth) => {
+  if (auth) {
+    console.log("Signed in as:", auth.uid);
+  } else {
+    console.log("Signed out (anonymous)");
+  }
+});
+
+// Stop listening
+unsubscribe();
+```
+
+The callback fires immediately with the current auth state, then again whenever it changes.
+
+## Full example
+
+```typescript
+import { LarkDatabase } from "@lark-sh/client";
+
+const db = new LarkDatabase("my-project/my-database");
+
+// Listen for auth state changes
+db.onAuthStateChanged((auth) => {
+  if (auth) {
+    console.log(`Welcome, ${auth.uid}`);
+    loadUserData(auth.uid);
+  } else {
+    console.log("Not authenticated");
+    showLoginScreen();
+  }
+});
+
+// Connect anonymously first
+await db.connect({ anonymous: true });
+
+// When the user logs in through your app's UI
+async function handleLogin(token: string) {
+  await db.signIn(token);
+  // onAuthStateChanged fires with the new auth state
+}
+
+// When the user logs out
+async function handleLogout() {
+  await db.signOut();
+  // onAuthStateChanged fires with null
+}
+```

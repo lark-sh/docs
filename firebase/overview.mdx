@@ -1,0 +1,36 @@
+---
+title: "Using Lark with Firebase SDKs"
+description: "Use your existing Firebase Realtime Database code with Lark"
+---
+
+Lark is wire-compatible with Firebase Realtime Database. If you have an existing Firebase RTDB app, you can point it at Lark with minimal changes.
+
+## What this means
+
+The official Firebase JavaScript SDK (and other platform SDKs) can connect to Lark instead of Firebase. Your existing code — reads, writes, subscriptions, queries, transactions — works as-is. You don't need to rewrite anything.
+
+Lark implements the same wire protocol that Firebase RTDB uses. When the Firebase SDK opens a WebSocket connection, it doesn't know (or care) that it's talking to Lark instead of Google's servers. The messages are identical.
+
+<Tip>Lark passes 100% of Firebase's 800+ JS SDK test suite. Every operation, every edge case, every event type.</Tip>
+
+## Enabling Firebase compatibility
+
+To use Firebase SDKs with Lark, toggle **Allow Legacy Firebase** in your project's settings in the Lark dashboard. This enables the Firebase wire protocol on your project's endpoint.
+
+## What you get
+
+Everything Firebase RTDB offers, plus:
+
+- **Performance** — Sub-50ms p99 latency.
+- **Pricing** — CCU-based, not per-operation. You pay for concurrent connections, not every read and write.
+- **New features** — Volatile paths, shared view optimization, and more.
+
+## What's different
+
+Not much. Three things change:
+
+1. **Connection URL** — You point at `larkdb.net` instead of `firebaseio.com`.
+2. **Auth configuration** — If you use Firebase Auth, you tell Lark your Firebase project ID so it can validate tokens.
+3. **A few edge cases** — Documented in the [compatibility notes](/firebase/compatibility).
+
+Everything else stays the same. Your code, your security rules, your data model — all unchanged.

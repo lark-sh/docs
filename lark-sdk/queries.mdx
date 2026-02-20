@@ -1,0 +1,238 @@
+---
+title: "Queries"
+description: "Sort, filter, and paginate data with chainable queries"
+---
+
+# Queries
+
+Queries let you sort, filter, and limit the data returned from a reference. All query methods are chainable and return a new query — they don't modify the original reference.
+
+## Ordering
+
+Every query starts with an ordering method. You can only use **one** `orderBy` per query.
+
+### `orderByChild(path)`
+
+Sort by a child key's value:
+
+```typescript
+import { LarkDatabase } from "@lark-sh/client";
+
+const db = new LarkDatabase("my-project/my-database");
+await db.connect({ anonymous: true });
+
+// Sort players by score
+const topPlayers = db.ref("players").orderByChild("score");
+```
+
+You can also order by nested child paths:
+
+```typescript
+// Sort by a nested field
+const byCity = db.ref("users").orderByChild("address/city");
+```
+
+### `orderByKey()`
+
+Sort by each child's key (alphabetically):
+
+```typescript
+const alphabetical = db.ref("users").orderByKey();
+```
+
+### `orderByValue()`
+
+Sort by each child's value directly. Useful when children are primitives (numbers, strings) rather than objects:
+
+```typescript
+const byScore = db.ref("highscores").orderByValue();
+```
+
+### `orderByPriority()`
+
+Sort by the priority set on each child node:
+
+```typescript
+const byPriority = db.ref("tasks").orderByPriority();
+```
+
+## Limiting results
+
+### `limitToFirst(count)`
+
+Returns only the first `count` items in the ordered result:
+
+```typescript
+// Get the 10 lowest scores
+const bottom10 = db.ref("players")
+  .orderByChild("score")
+  .limitToFirst(10);
+```
+
+### `limitToLast(count)`
+
+Returns only the last `count` items in the ordered result:
+
+```typescript
+// Get the 10 highest scores
+const top10 = db.ref("players")
+  .orderByChild("score")
+  .limitToLast(10);
+```
+
+## Range filters
+
+Range methods narrow results to a specific window. They work with the active ordering.
+
+### `startAt(value, key?)`
+
+Include items with a value greater than or equal to the specified value:
+
+```typescript
+// Players with score >= 100
+const eliteRef = db.ref("players")
+  .orderByChild("score")
+  .startAt(100);
+```
+
+### `startAfter(value, key?)`
+
+Include items with a value strictly greater than the specified value:
+
+```typescript
+// Players with score > 100
+const aboveRef = db.ref("players")
+  .orderByChild("score")
+  .startAfter(100);
+```
+
+### `endAt(value, key?)`
+
+Include items with a value less than or equal to the specified value:
+
+```typescript
+// Players with score <= 50
+const belowRef = db.ref("players")
+  .orderByChild("score")
+  .endAt(50);
+```
+
+### `endBefore(value, key?)`
+
+Include items with a value strictly less than the specified value:
+
+```typescript
+// Players with score < 50
+const underRef = db.ref("players")
+  .orderByChild("score")
+  .endBefore(50);
+```
+
+### `equalTo(value, key?)`
+
+Match items with exactly the specified value:
+
+```typescript
+// Players with score of exactly 100
+const exact = db.ref("players")
+  .orderByChild("score")
+  .equalTo(100);
+```
+
+<Note>
+The optional `key` parameter in range methods is used to disambiguate when multiple children have the same value. It acts as a secondary sort by key.
+</Note>
+
+## Query identifier
+
+Each query has a `queryIdentifier` property — a string that uniquely identifies the combination of ordering, limits, and ranges. This is useful for deduplication or caching:
+
+```typescript
+const query = db.ref("players")
+  .orderByChild("score")
+  .limitToLast(10);
+
+console.log(query.queryIdentifier);
+// Unique string representing this exact query configuration
+```
+
+## Using queries with subscriptions
+
+Queries work with both `once()` and `on()`. This is where they really shine — you can subscribe to a filtered, sorted slice of your data in real time.
+
+```typescript
+// Subscribe to top 10 players, updated live
+const unsubscribe = db.ref("players")
+  .orderByChild("score")
+  .limitToLast(10)
+  .on("child_added", (snapshot) => {
+    console.log(`${snapshot.val().name}: ${snapshot.val().score}`);
+  });
+```
+
+## Examples
+
+### Leaderboard
+
+Display a live top-10 leaderboard sorted by score:
+
+```typescript
+const leaderboard: Array<{ name: string; score: number }> = [];
+
+const unsubscribe = db.ref("players")
+  .orderByChild("score")
+  .limitToLast(10)
+  .on("value", (snapshot) => {
+    leaderboard.length = 0;
+
+    snapshot.forEach((childSnap) => {
+      leaderboard.push({
+        name: childSnap.val().name,
+        score: childSnap.val().score,
+      });
+    });
+
+    // Reverse because limitToLast returns ascending order
+    leaderboard.reverse();
+
+    console.log("Top 10:", leaderboard);
+  });
+```
+
+### Pagination
+
+Load data page by page using `startAfter()` and `limitToFirst()`:
+
+```typescript
+async function loadPage(
+  ref: ReturnType<LarkDatabase["ref"]>,
+  pageSize: number,
+  lastKey?: string
+) {
+  let query = ref.orderByKey().limitToFirst(pageSize);
+
+  if (lastKey) {
+    query = query.startAfter(lastKey);
+  }
+
+  const snapshot = await query.once("value");
+  const items: Array<{ key: string; value: any }> = [];
+
+  snapshot.forEach((child) => {
+    items.push({ key: child.key, value: child.val() });
+  });
+
+  return items;
+}
+
+// Load first page
+const page1 = await loadPage(db.ref("products"), 20);
+
+// Load next page, starting after the last key from page 1
+const lastKey = page1[page1.length - 1]?.key;
+const page2 = await loadPage(db.ref("products"), 20, lastKey);
+```
+
+<Warning>
+You can only use one `orderBy` method per query. Calling a second `orderBy` will throw an error. If you need to filter on multiple fields, restructure your data so a single ordering covers your use case, or filter client-side after fetching.
+</Warning>

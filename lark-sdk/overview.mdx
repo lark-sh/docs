@@ -1,0 +1,70 @@
+---
+title: "Lark SDK overview"
+description: "The native JavaScript/TypeScript SDK for Lark"
+---
+
+# Lark SDK
+
+The Lark SDK (`@lark-sh/client`) is the official JavaScript/TypeScript client for Lark databases. It gives you real-time data synchronization, offline support, and a modern developer experience in a lightweight package.
+
+## Why the Lark SDK?
+
+**Small footprint.** The entire SDK is ~20KB gzipped. No bloated dependency trees. It loads fast and stays out of your way.
+
+**Modern API design.** Subscriptions return an unsubscribe function directly — no need to track callbacks or call a separate `off()` method. This plays nicely with React's `useEffect` cleanup, Vue's `onUnmounted`, and any other framework lifecycle pattern.
+
+```typescript
+import { LarkDatabase } from "@lark-sh/client";
+
+const db = new LarkDatabase("my-project/my-database");
+
+// on() returns an unsubscribe function
+const unsubscribe = db.ref("scores").on("value", (snapshot) => {
+  console.log(snapshot.val());
+});
+
+// Clean up when you're done
+unsubscribe();
+```
+
+**First-class WebTransport support.** The SDK automatically negotiates the best transport available. When WebTransport (HTTP/3) is supported, you get lower latency and better multiplexing. It falls back to WebSocket seamlessly.
+
+**Volatile path support.** Ephemeral data like cursor positions, typing indicators, and player coordinates can flow through volatile paths — high-frequency updates that skip persistence for maximum speed.
+
+**Full TypeScript types.** Every method, option, and return value is fully typed. You get autocompletion and compile-time safety without installing separate type packages.
+
+## Installation
+
+```bash
+npm install @lark-sh/client
+```
+
+Or with your preferred package manager:
+
+```bash
+yarn add @lark-sh/client
+pnpm add @lark-sh/client
+```
+
+## Platform support
+
+The Lark SDK works in **browsers** and **Node.js**. Both CommonJS and ESM builds are included — your bundler or runtime will pick the right one automatically.
+
+| Platform | Support |
+|---|---|
+| Modern browsers (Chrome, Firefox, Safari, Edge) | Full support |
+| Node.js 18+ | Full support |
+| React Native | Full support |
+| Deno | ESM import |
+
+## Package
+
+Everything you need is in a single package:
+
+```typescript
+import { LarkDatabase, ServerValue } from "@lark-sh/client";
+```
+
+<Tip>
+If you're migrating from Firebase v8, the SDK also ships a compatibility layer at `@lark-sh/client/fb-v8`. See the [Firebase v8 compatibility page](/lark-sdk/fb-v8) for details.
+</Tip>

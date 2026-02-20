@@ -1,0 +1,220 @@
+---
+title: "Rules examples"
+description: "Common security rules patterns for real-world apps"
+---
+
+These are copy-paste patterns for the most common security rules scenarios. Each example includes the full rules JSON and a short explanation. For the complete reference of available variables and methods, see the [rules reference](/platform/rules-reference).
+
+## Public read, authenticated write
+
+Anyone can read. Only logged-in users can write.
+
+```json
+{
+  "rules": {
+    "announcements": {
+      ".read": true,
+      ".write": "auth !== null"
+    }
+  }
+}
+```
+
+This is the simplest useful pattern. The `.read` rule is a plain `true`, so unauthenticated clients can read. The `.write` rule checks that `auth` is not null, meaning the client must be signed in to write. Good for public content like leaderboards, announcements, or game state that anyone can view.
+
+## User-owned data
+
+Users can only read and write their own data.
+
+```json
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth.uid === $uid",
+        ".write": "auth.uid === $uid"
+      }
+    }
+  }
+}
+```
+
+The `$uid` wildcard captures the child key under `/users`. The rule compares it to `auth.uid`, so a user can only access the node that matches their own ID. No user can read or modify another user's data.
+
+## Required fields validation
+
+Ensure that every write includes specific fields.
+
+```json
+{
+  "rules": {
+    "players": {
+      "$playerId": {
+        ".write": "auth.uid === $playerId",
+        ".validate": "newData.hasChildren(['name', 'score'])",
+        "name": {
+          ".validate": "newData.isString() && newData.val().length >= 1"
+        },
+        "score": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    }
+  }
+}
+```
+
+The top-level `.validate` ensures both `name` and `score` are present. Each child has its own validation to enforce types and constraints. The `$other` rule with `.validate: false` rejects any fields that aren't explicitly defined. This locks down your data shape tightly.
+
+<Tip>
+The `$other` wildcard trick is a great way to prevent clients from writing unexpected fields. Any child key that doesn't match a named sibling rule falls through to `$other` and gets rejected.
+</Tip>
+
+## Type validation
+
+Check that values are the correct type.
+
+```json
+{
+  "rules": {
+    "profiles": {
+      "$uid": {
+        ".write": "auth.uid === $uid",
+        "displayName": {
+          ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 30"
+        },
+        "level": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100"
+        },
+        "isPremium": {
+          ".validate": "newData.isBoolean()"
+        }
+      }
+    }
+  }
+}
+```
+
+Use `isString()`, `isNumber()`, and `isBoolean()` to enforce types. Chain them with range checks or length constraints using `&&`. This prevents clients from sending a string where you expect a number, or a negative value where you expect a positive one.
+
+## Role-based access
+
+Use an admin flag stored in user data to gate sensitive operations.
+
+```json
+{
+  "rules": {
+    "adminContent": {
+      ".read": "root.child('users/' + auth.uid + '/role').val() === 'admin'",
+      ".write": "root.child('users/' + auth.uid + '/role').val() === 'admin'"
+    },
+    "users": {
+      "$uid": {
+        ".read": "auth.uid === $uid",
+        ".write": "auth.uid === $uid",
+        "role": {
+          ".write": "root.child('users/' + auth.uid + '/role').val() === 'admin'",
+          ".validate": "newData.isString() && (newData.val() === 'admin' || newData.val() === 'member')"
+        }
+      }
+    }
+  }
+}
+```
+
+The `/adminContent` path checks the requesting user's `role` field by reading from `/users/{uid}/role` via `root.child(...)`. Only users whose role is `'admin'` can read or write admin content. The `role` field itself can only be changed by an existing admin, preventing users from promoting themselves.
+
+<Warning>
+Make sure the first admin account's role is set via the Lark dashboard or a server-side script. Otherwise, no one will have permission to set the initial admin role through the client SDK.
+</Warning>
+
+## Game lobby pattern
+
+Players can join a lobby by writing their own entry. Only the host can modify game settings. Anyone in the lobby can read all lobby data.
+
+```json
+{
+  "rules": {
+    "lobbies": {
+      "$lobbyId": {
+        ".read": "data.child('players/' + auth.uid).exists()",
+        "settings": {
+          ".write": "auth.uid === data.parent().child('host').val()",
+          ".validate": "newData.hasChildren(['maxPlayers', 'gameMode'])"
+        },
+        "host": {
+          ".write": false
+        },
+        "players": {
+          "$uid": {
+            ".write": "auth.uid === $uid && (!data.exists() || auth.uid === $uid)",
+            ".validate": "newData.hasChildren(['name', 'ready'])",
+            "name": {
+              ".validate": "newData.isString()"
+            },
+            "ready": {
+              ".validate": "newData.isBoolean()"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Here's what each piece does:
+
+- **Read access**: Only players already in the lobby can read its data. The rule checks if the authenticated user has an entry under `players/`.
+- **Settings**: Only the host (whose UID matches the `host` field) can update game settings like `maxPlayers` and `gameMode`.
+- **Host field**: Locked down with `.write: false` at the client level. Set the host when creating the lobby via a server-side operation or initial write.
+- **Players**: Each player can write only their own entry (`auth.uid === $uid`). Validation ensures every player entry has a `name` and `ready` status.
+
+<Note>
+The host field should be set when the lobby is first created. You can do this by including `host` in the initial write that creates the lobby, before per-field rules take effect. Alternatively, set it from a trusted server environment.
+</Note>
+
+## Write-once data
+
+Data can be created but never modified or deleted.
+
+```json
+{
+  "rules": {
+    "events": {
+      "$eventId": {
+        ".read": true,
+        ".write": "auth !== null && !data.exists()",
+        ".validate": "newData.exists() && newData.hasChildren(['type', 'timestamp'])",
+        "timestamp": {
+          ".validate": "newData.isNumber() && newData.val() === now"
+        }
+      }
+    }
+  }
+}
+```
+
+The `.write` rule has two conditions: the user must be authenticated (`auth !== null`), and the data must not already exist (`!data.exists()`). Once a node is written, `data.exists()` becomes `true` and all future writes are rejected.
+
+The `.validate` rule also requires `newData.exists()`, which prevents deletion. Without this, a client could delete the node (setting it to `null`) and then re-create it.
+
+The `timestamp` validation ensures the timestamp is set to the server's current time via `now`, preventing clients from backdating events.
+
+<Tip>
+Write-once data is perfect for audit logs, game events, chat messages, or any data that should be immutable after creation.
+</Tip>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Rules reference" icon="book" href="/platform/rules-reference">
+    Full reference for variables, snapshot methods, string methods, and operators.
+  </Card>
+  <Card title="Security rules" icon="shield-halved" href="/platform/security-rules">
+    Understand how rules are structured, how cascading works, and where to edit them.
+  </Card>
+</CardGroup>

@@ -1,0 +1,94 @@
+---
+title: "Transports"
+description: "WebSocket and WebTransport connections to Lark"
+---
+
+Lark supports two transport protocols for client-server communication. Your SDK picks the best one automatically, but it helps to understand what's happening under the hood.
+
+## WebSocket
+
+WebSocket is the default transport. It works everywhere — all browsers, Node.js, React Native, and any environment that supports standard WebSocket connections.
+
+- **URL format**: `wss://{projectId}.larkdb.net/ws`
+- **Delivery**: Reliable, ordered TCP delivery. Every message arrives, in order.
+- **Compatibility**: Universal. If your client can make a network connection, it can use WebSocket.
+
+WebSocket is a mature, battle-tested protocol. For most applications, it's the only transport you need.
+
+## WebTransport
+
+WebTransport is a modern protocol built on HTTP/3 and QUIC. It's available in newer browsers and provides meaningful advantages for real-time applications.
+
+- **URL format**: `https://{projectId}.larkdb.net:{port}/wt`
+  - The port is randomly assigned from the range 7778-7809 for load balancing.
+- **Delivery**: QUIC streams for reliable data, plus UDP datagrams for [volatile paths](/platform/volatile).
+- **Compatibility**: Chrome 97+, Edge 97+, Firefox 114+. Not yet available in Safari, Node.js, or React Native.
+
+### Why WebTransport is faster
+
+WebTransport has two key advantages over WebSocket:
+
+**No head-of-line blocking.** With WebSocket (TCP), if one packet is lost, every subsequent packet waits until the lost one is retransmitted. A dropped packet carrying a chat message stalls cursor updates, game state, everything. With WebTransport (QUIC), each stream is independent. A lost packet on one stream doesn't block other streams.
+
+**UDP datagrams for volatile data.** Volatile writes over WebTransport use UDP datagrams — unreliable, unordered delivery with zero retransmission overhead. For data like cursor positions where you only care about the latest value, this is ideal. A lost datagram is irrelevant because a newer one is already on the way.
+
+<Info>
+These advantages matter most under packet loss — which is common on mobile networks, congested Wi-Fi, and cross-continent connections. On a clean local network, WebSocket and WebTransport perform similarly.
+</Info>
+
+## Auto-detection
+
+By default, the Lark SDK tries WebTransport first. If the connection fails or times out, it falls back to WebSocket. This happens transparently — your code doesn't need to handle it.
+
+```typescript
+// The SDK auto-detects the best transport
+const db = new LarkDatabase('my-project/my-database');
+// Connected via WebTransport if available, WebSocket otherwise
+```
+
+The default timeout for the WebTransport attempt is **2 seconds**. If WebTransport doesn't connect within that window, the SDK immediately falls back to WebSocket.
+
+### Forcing a specific transport
+
+You can override auto-detection if you want to control which transport is used:
+
+```typescript
+// Force WebSocket only
+const db = new LarkDatabase('my-project/my-database', {
+  transport: 'websocket'
+});
+
+// Force WebTransport only (will fail if not supported)
+const db = new LarkDatabase('my-project/my-database', {
+  transport: 'webtransport'
+});
+
+// Auto-detect with a custom timeout
+const db = new LarkDatabase('my-project/my-database', {
+  transport: 'auto',
+  webTransportTimeout: 5000 // 5 seconds
+});
+```
+
+## When to prefer WebTransport
+
+Choose WebTransport when:
+
+- Your app uses [volatile paths](/platform/volatile) for game state, cursors, or other high-frequency data. The UDP datagram support gives you faster, lower-overhead delivery.
+- Your users are on modern browsers (Chrome, Edge, or Firefox).
+- Your app is latency-sensitive and your users may be on spotty connections where head-of-line blocking hurts.
+
+## When WebSocket is fine
+
+WebSocket is the right choice for most applications. It's mature, universal, and performant. You won't notice a difference unless you're pushing high-frequency volatile updates or operating under significant packet loss.
+
+Stick with WebSocket (or let auto-detection handle it) when:
+
+- Your app doesn't use volatile paths.
+- You need to support Safari, Node.js, or React Native.
+- Your users are on reliable connections.
+- You just want things to work everywhere without thinking about it.
+
+<Tip>
+When in doubt, leave the transport setting on auto. Your Chrome and Edge users get the benefits of WebTransport, and everyone else gets reliable WebSocket. No code changes needed.
+</Tip>

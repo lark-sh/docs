@@ -1,80 +1,87 @@
 ---
 title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+description: "Create a project and build your first real-time app in minutes"
 ---
 
-## Get started in three steps
+This guide walks you through creating a Lark project and connecting to it from a JavaScript or TypeScript app.
 
-Get your documentation site running locally and make your first customization.
+## 1. Create a project
 
-### Step 1: Set up your local environment
+Head to the [Lark dashboard](https://admin.larkdb.net) and sign in with Google. Click **New Project** and give it a name — this generates a project ID you'll use to connect.
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+In your project's **Settings** page, note your **Project ID**. You'll need it in the next step.
 
-### Step 2: Deploy your changes
+<Tip>Enable **Auto Create** in your project settings so databases are created automatically when a client connects. This is the fastest way to get started.</Tip>
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+## 2. Install the SDK
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+```bash
+npm install @lark-sh/client
+```
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+## 3. Connect and write data
 
-### Step 3: Go live
+```typescript
+import { LarkDatabase } from '@lark-sh/client';
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+// Connect to your project and database
+const db = new LarkDatabase('your-project-id/my-first-database', {
+  anonymous: true
+});
+await db.connect();
 
-## Next steps
+// Write some data
+await db.ref('players/alice').set({
+  name: 'Alice',
+  score: 0
+});
+```
 
-Now that you have your docs running, explore these key features:
+The `anonymous: true` option connects without authentication — useful for getting started quickly. You'll add proper auth later.
+
+## 4. Read data
+
+```typescript
+// Read once
+const snapshot = await db.ref('players/alice').once('value');
+console.log(snapshot.val()); // { name: 'Alice', score: 0 }
+```
+
+## 5. Subscribe to real-time updates
+
+This is where it gets interesting. Subscribe to a path and your callback fires every time the data changes — from any connected client.
+
+```typescript
+const unsubscribe = db.ref('players').on('value', (snapshot) => {
+  console.log('Players:', snapshot.val());
+});
+
+// Update a score — every subscriber sees it instantly
+await db.ref('players/alice/score').set(42);
+
+// When you're done listening
+unsubscribe();
+```
+
+## 6. Clean up
+
+```typescript
+await db.disconnect();
+```
+
+## What's next?
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Data structure" icon="sitemap" href="/platform/data-structure">
+    Understand how Lark organizes data as a JSON tree.
+  </Card>
+  <Card title="Security rules" icon="shield-halved" href="/platform/security-rules">
+    Lock down who can read and write your data.
+  </Card>
+  <Card title="Subscriptions" icon="bolt" href="/platform/subscriptions">
+    Learn about real-time event types and how delta updates work.
+  </Card>
+  <Card title="Dashboard" icon="grid-2" href="/dashboard/overview">
+    Explore your project's databases, metrics, and settings.
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

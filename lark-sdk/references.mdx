@@ -1,0 +1,128 @@
+---
+title: "References and paths"
+description: "Navigate your data tree with database references"
+---
+
+# References and paths
+
+A **reference** points to a specific location in your database. You use references to read, write, and listen to data at that location.
+
+## Creating a reference
+
+Call `db.ref(path)` with a slash-separated path string:
+
+```typescript
+import { LarkDatabase } from "@lark-sh/client";
+
+const db = new LarkDatabase("my-project/my-database");
+await db.connect({ anonymous: true });
+
+const usersRef = db.ref("users");
+const aliceRef = db.ref("users/alice");
+const scoreRef = db.ref("users/alice/score");
+```
+
+Call `db.ref()` with no arguments (or an empty string) to get a reference to the root of your database:
+
+```typescript
+const rootRef = db.ref();
+```
+
+<Info>
+References are lightweight objects. Creating a reference does **not** fetch any data or open any connections. It simply represents a path. You can create as many as you need without any performance cost.
+</Info>
+
+## Navigating with references
+
+You can move around the data tree from any reference.
+
+### `.child(path)`
+
+Returns a reference to a child location:
+
+```typescript
+const usersRef = db.ref("users");
+const aliceRef = usersRef.child("alice");
+const scoreRef = aliceRef.child("score");
+
+// Equivalent to:
+const sameScoreRef = db.ref("users/alice/score");
+```
+
+You can also pass deeper paths:
+
+```typescript
+const scoreRef = db.ref("users").child("alice/score");
+```
+
+### `.parent`
+
+Returns a reference to the parent location. Returns `null` for the root reference.
+
+```typescript
+const scoreRef = db.ref("users/alice/score");
+const aliceRef = scoreRef.parent; // "users/alice"
+const usersRef = aliceRef.parent; // "users"
+const rootRef = usersRef.parent; // root
+const nothing = rootRef.parent; // null
+```
+
+### `.root`
+
+Returns a reference to the root of the database, no matter where you start:
+
+```typescript
+const deepRef = db.ref("a/b/c/d/e");
+const rootRef = deepRef.root; // root
+```
+
+## Properties
+
+### `.key`
+
+The last segment of the path. For root references, this is `null`.
+
+```typescript
+db.ref("users/alice/score").key; // "score"
+db.ref("users/alice").key; // "alice"
+db.ref("users").key; // "users"
+db.ref().key; // null
+```
+
+### `.path`
+
+The full path string from the root:
+
+```typescript
+db.ref("users/alice/score").path; // "users/alice/score"
+db.ref().path; // ""
+```
+
+## Practical example
+
+References make it easy to work with related data without repeating path strings:
+
+```typescript
+const gameRef = db.ref("games/game-123");
+
+// Navigate to different parts of the game
+const playersRef = gameRef.child("players");
+const settingsRef = gameRef.child("settings");
+const chatRef = gameRef.child("chat");
+
+// Write to multiple locations
+await settingsRef.set({ maxPlayers: 4, timeLimit: 300 });
+await playersRef.child("player-1").set({ name: "Alice", ready: true });
+
+// Read from a sibling path
+const settings = await settingsRef.once("value");
+console.log(settings.val().maxPlayers); // 4
+
+// Navigate back up
+const sameGameRef = playersRef.parent; // back to "games/game-123"
+console.log(sameGameRef.key); // "game-123"
+```
+
+<Tip>
+Store references in variables when you use the same path repeatedly. It keeps your code cleaner and avoids typos in path strings.
+</Tip>

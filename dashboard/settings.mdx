@@ -1,0 +1,41 @@
+---
+title: "Project settings"
+description: "Configure your project's behavior, authentication, and security"
+---
+
+Access your project settings by clicking **Settings** from your project dashboard.
+
+## Project name
+
+Your display name. You can edit it anytime — it has no effect on connections or configuration.
+
+## Project ID
+
+Read-only after creation. This is the identifier used in SDK connection strings. Click the copy button next to it to grab it.
+
+## Ephemeral mode
+
+When enabled, databases are automatically deleted when no active connections are detected. This is useful for temporary game sessions, testing environments, or any scenario where data doesn't need to persist.
+
+## Auto Create
+
+When enabled, databases are created automatically the first time a client connects. When disabled, databases must be created manually in the dashboard before clients can connect.
+
+<Tip>Keep **Auto Create** enabled while getting started. It removes friction during development.</Tip>
+
+## Allow Legacy Firebase
+
+Enables compatibility with existing Firebase Realtime Database SDKs. When you toggle this on, two additional options appear:
+
+- **Use First Path as Database**: Routes clients by their first path segment. For example, a write to `/room-123/players/alice` goes to a database named `room-123` at path `/players/alice`. This is useful for Firebase apps that used a single database with path-based sharding.
+- **Firebase Auth Project ID**: Your Firebase project ID, used to validate Firebase Auth tokens (RS256 JWTs). Set this if your users authenticate through Firebase Auth.
+
+## Secret key
+
+Your secret key is used to sign Lark authentication tokens (HS256 JWTs). From this section you can view, copy, and regenerate your key.
+
+<Warning>Keep your secret key on your server. Never expose it in client-side code. Regenerating your secret key invalidates all existing tokens immediately.</Warning>
+
+## Danger zone
+
+Delete the project permanently. You must type the project ID to confirm. This action cannot be undone.

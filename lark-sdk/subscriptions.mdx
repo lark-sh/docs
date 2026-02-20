@@ -1,0 +1,187 @@
+---
+title: "Subscriptions"
+description: "Listen for real-time updates with the Lark SDK"
+---
+
+# Subscriptions
+
+Subscriptions are the core of Lark's real-time capabilities. When data changes on the server, your callback fires with the updated data — no polling, no manual refreshes.
+
+## Basic usage
+
+Call `ref.on(eventType, callback)` to start listening. It returns an **unsubscribe function** you call when you're done:
+
+```typescript
+import { LarkDatabase } from "@lark-sh/client";
+
+const db = new LarkDatabase("my-project/my-database");
+await db.connect({ anonymous: true });
+
+const unsubscribe = db.ref("scores/player1").on("value", (snapshot) => {
+  console.log("Current score:", snapshot.val());
+});
+
+// Later, stop listening
+unsubscribe();
+```
+
+<Tip>
+The unsubscribe pattern works perfectly with React's `useEffect` cleanup, Vue's `onUnmounted`, and similar framework lifecycle hooks.
+</Tip>
+
+## Event types
+
+### `value`
+
+Fires once with the initial data, then again every time anything at the location (or its children) changes. The callback receives the complete snapshot.
+
+```typescript
+const unsubscribe = db.ref("game/state").on("value", (snapshot) => {
+  const state = snapshot.val();
+  console.log("Full game state:", state);
+});
+```
+
+### `child_added`
+
+Fires once for each existing child, then again whenever a new child is added. The callback receives the child's snapshot and the key of the previous child (for ordering).
+
+```typescript
+const unsubscribe = db.ref("chat/messages").on(
+  "child_added",
+  (snapshot, prevChildKey) => {
+    console.log("New message:", snapshot.key, snapshot.val());
+    console.log("After:", prevChildKey);
+  }
+);
+```
+
+### `child_changed`
+
+Fires when an existing child's value changes. Does not fire for additions or removals.
+
+```typescript
+const unsubscribe = db.ref("players").on(
+  "child_changed",
+  (snapshot, prevChildKey) => {
+    console.log("Player updated:", snapshot.key, snapshot.val());
+  }
+);
+```
+
+### `child_removed`
+
+Fires when a child is removed.
+
+```typescript
+const unsubscribe = db.ref("players").on("child_removed", (snapshot) => {
+  console.log("Player left:", snapshot.key);
+});
+```
+
+### `child_moved`
+
+Fires when a child's sort order changes (due to priority or value changes when using ordered queries).
+
+```typescript
+const unsubscribe = db.ref("leaderboard")
+  .orderByChild("score")
+  .on("child_moved", (snapshot, prevChildKey) => {
+    console.log("Rank changed:", snapshot.key, "now after:", prevChildKey);
+  });
+```
+
+## Practical examples
+
+### Player list
+
+Keep a live roster of players in a multiplayer game:
+
+```typescript
+const players = new Map<string, any>();
+
+const unsubAdded = db.ref("game/players").on("child_added", (snapshot) => {
+  players.set(snapshot.key, snapshot.val());
+  console.log(`${snapshot.val().name} joined. Total: ${players.size}`);
+});
+
+const unsubRemoved = db.ref("game/players").on("child_removed", (snapshot) => {
+  players.delete(snapshot.key);
+  console.log(`${snapshot.val().name} left. Total: ${players.size}`);
+});
+
+const unsubChanged = db.ref("game/players").on("child_changed", (snapshot) => {
+  players.set(snapshot.key, snapshot.val());
+  console.log(`${snapshot.val().name} updated.`);
+});
+
+// Clean up all listeners
+function cleanup() {
+  unsubAdded();
+  unsubRemoved();
+  unsubChanged();
+}
+```
+
+### New chat messages
+
+Listen for messages added to a chat room:
+
+```typescript
+const unsubscribe = db.ref("rooms/lobby/messages")
+  .orderByChild("timestamp")
+  .limitToLast(50)
+  .on("child_added", (snapshot) => {
+    const msg = snapshot.val();
+    displayMessage(msg.sender, msg.text, msg.timestamp);
+  });
+```
+
+### Live game score
+
+Track a single value that changes frequently:
+
+```typescript
+const unsubscribe = db.ref("game/score").on("value", (snapshot) => {
+  const score = snapshot.val() ?? 0;
+  updateScoreDisplay(score);
+});
+```
+
+## Unsubscribing
+
+Always unsubscribe when you no longer need updates. This frees up resources on both the client and server.
+
+```typescript
+// Store the unsubscribe function
+const unsubscribe = db.ref("data").on("value", callback);
+
+// Call it when done
+unsubscribe();
+```
+
+<Warning>
+Forgetting to unsubscribe is a common source of memory leaks and unexpected behavior. Always clean up your listeners when a component unmounts or a view is no longer active.
+</Warning>
+
+### React example
+
+```typescript
+import { useEffect, useState } from "react";
+import { LarkDatabase } from "@lark-sh/client";
+
+function ScoreDisplay({ db, playerId }: { db: LarkDatabase; playerId: string }) {
+  const [score, setScore] = useState(0);
+
+  useEffect(() => {
+    const unsubscribe = db.ref(`scores/${playerId}`).on("value", (snapshot) => {
+      setScore(snapshot.val() ?? 0);
+    });
+
+    // Cleanup on unmount
+    return unsubscribe;
+  }, [db, playerId]);
+
+  return <div>Score: {score}</div>;
+}
+```

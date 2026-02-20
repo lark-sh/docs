@@ -1,0 +1,431 @@
+---
+title: "DatabaseReference"
+description: "API reference for the DatabaseReference class"
+---
+
+A `DatabaseReference` represents a specific path in the database. It provides methods for reading, writing, and querying data at that location.
+
+Obtain a reference via [`LarkDatabase.ref()`](/lark-sdk/api/lark-database#ref).
+
+```typescript
+const ref = db.ref('users/alice');
+```
+
+## Properties
+
+| Property | Type | Description |
+|---|---|---|
+| `path` | `string` | The absolute path this reference points to. |
+| `key` | `string \| null` | The last segment of the path, or `null` for the root reference. |
+| `parent` | `DatabaseReference \| null` | A reference to the parent location, or `null` for the root. |
+| `root` | `DatabaseReference` | A reference to the root of the database. |
+| `database` | `LarkDatabase` | The `LarkDatabase` instance this reference belongs to. |
+| `queryIdentifier` | `string` | A string that uniquely identifies the query parameters attached to this reference. |
+
+## Navigation
+
+### child
+
+```typescript
+child(path: string): DatabaseReference
+```
+
+Returns a new `DatabaseReference` for a child location relative to this reference.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `path` | `string` | A relative path from this location. Can contain multiple segments separated by `/`. |
+
+```typescript
+const usersRef = db.ref('users');
+const aliceRef = usersRef.child('alice');
+const profileRef = usersRef.child('alice/profile');
+```
+
+## Write Methods
+
+### set
+
+```typescript
+set(value: any): Promise<void>
+```
+
+Writes a value to this location, replacing any existing data.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `value` | `any` | The value to write. Can be a primitive, object, array, or `null` (which deletes the data). |
+
+```typescript
+await db.ref('users/alice').set({
+  name: 'Alice',
+  email: 'alice@example.com',
+});
+```
+
+### update
+
+```typescript
+update(values: object): Promise<void>
+```
+
+Updates specific children at this location without overwriting the entire node. Supports multi-path updates with nested path keys.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `values` | `object` | An object containing the children to update. |
+
+```typescript
+await db.ref('users/alice').update({
+  email: 'newalice@example.com',
+  'profile/lastSeen': Date.now(),
+});
+```
+
+### remove
+
+```typescript
+remove(): Promise<void>
+```
+
+Deletes the data at this location and all child locations.
+
+```typescript
+await db.ref('users/alice').remove();
+```
+
+### push
+
+```typescript
+push(value?: any): Promise<DatabaseReference>
+```
+
+Generates a new child location with a unique, chronologically-sortable key and optionally writes a value to it. Returns a reference to the new child.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `value` | `any` | Optional value to write at the new child location. |
+
+```typescript
+const newPostRef = await db.ref('posts').push({
+  title: 'Hello World',
+  timestamp: ServerValue.TIMESTAMP,
+});
+
+console.log(newPostRef.key); // e.g. "-NxK3j..."
+```
+
+<Tip>
+If you omit the value, `push()` returns a reference with the generated key without writing anything. You can then use `set()` on the returned reference.
+</Tip>
+
+### setWithPriority
+
+```typescript
+setWithPriority(value: any, priority: string | number | null): Promise<void>
+```
+
+Writes a value along with a priority for sorting.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `value` | `any` | The value to write. |
+| `priority` | `string \| number \| null` | The sort priority. |
+
+```typescript
+await db.ref('scores/alice').setWithPriority({ score: 100 }, 100);
+```
+
+### setPriority
+
+```typescript
+setPriority(priority: string | number | null): Promise<void>
+```
+
+Sets the priority of data at this location without modifying the value.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `priority` | `string \| number \| null` | The new priority. |
+
+```typescript
+await db.ref('scores/alice').setPriority(200);
+```
+
+## Read Methods
+
+### once
+
+```typescript
+once(eventType?: string): Promise<DataSnapshot>
+```
+
+Reads data from this location once. Does not subscribe to ongoing changes.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `eventType` | `string` | `'value'` | The event type to listen for. One of `'value'`, `'child_added'`, `'child_changed'`, `'child_removed'`, `'child_moved'`. |
+
+```typescript
+const snapshot = await db.ref('users/alice').once();
+console.log(snapshot.val());
+```
+
+### get
+
+```typescript
+get(): Promise<DataSnapshot>
+```
+
+Reads the data at this location once. Equivalent to `once('value')`.
+
+```typescript
+const snapshot = await db.ref('users/alice').get();
+if (snapshot.exists()) {
+  console.log(snapshot.val());
+}
+```
+
+## Subscription Methods
+
+### on
+
+```typescript
+on(eventType: string, callback: (snapshot: DataSnapshot) => void): () => void
+```
+
+Subscribes to data changes at this location. The callback fires immediately with the current value and again whenever the data changes. Returns an unsubscribe function.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `eventType` | `string` | The event type to listen for. |
+| `callback` | `Function` | Called with a `DataSnapshot` each time the event fires. |
+
+**Event types:**
+
+| Event | Description |
+|---|---|
+| `'value'` | Fires when the data at this location (including children) changes. |
+| `'child_added'` | Fires for each existing child and when a new child is added. |
+| `'child_changed'` | Fires when a child's data changes. |
+| `'child_removed'` | Fires when a child is removed. |
+| `'child_moved'` | Fires when a child's sort order changes. |
+
+```typescript
+const unsubscribe = db.ref('users').on('child_added', (snapshot) => {
+  console.log(`User added: ${snapshot.key}`, snapshot.val());
+});
+
+// Stop listening
+unsubscribe();
+```
+
+## Query Methods
+
+All query methods return a new `DatabaseReference` with query constraints attached. They do not modify the original reference.
+
+### orderByChild
+
+```typescript
+orderByChild(path: string): DatabaseReference
+```
+
+Orders results by the value of a specified child key.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `path` | `string` | The child key to order by. Can be a nested path (e.g. `'profile/age'`). |
+
+```typescript
+const byAge = db.ref('users').orderByChild('age').limitToFirst(10);
+```
+
+### orderByKey
+
+```typescript
+orderByKey(): DatabaseReference
+```
+
+Orders results by their key.
+
+```typescript
+const byKey = db.ref('users').orderByKey();
+```
+
+### orderByValue
+
+```typescript
+orderByValue(): DatabaseReference
+```
+
+Orders results by their value. Useful when children are primitives.
+
+```typescript
+const byScore = db.ref('scores').orderByValue().limitToLast(5);
+```
+
+### orderByPriority
+
+```typescript
+orderByPriority(): DatabaseReference
+```
+
+Orders results by their priority.
+
+```typescript
+const byPriority = db.ref('tasks').orderByPriority();
+```
+
+### limitToFirst
+
+```typescript
+limitToFirst(limit: number): DatabaseReference
+```
+
+Limits the result set to the first N items (based on the current ordering).
+
+| Parameter | Type | Description |
+|---|---|---|
+| `limit` | `number` | Maximum number of items to return from the beginning. |
+
+```typescript
+const firstFive = db.ref('posts').orderByKey().limitToFirst(5);
+```
+
+### limitToLast
+
+```typescript
+limitToLast(limit: number): DatabaseReference
+```
+
+Limits the result set to the last N items (based on the current ordering).
+
+| Parameter | Type | Description |
+|---|---|---|
+| `limit` | `number` | Maximum number of items to return from the end. |
+
+```typescript
+const lastTen = db.ref('posts').orderByKey().limitToLast(10);
+```
+
+### startAt
+
+```typescript
+startAt(value: any, key?: string): DatabaseReference
+```
+
+Returns items starting at the specified value (inclusive).
+
+| Parameter | Type | Description |
+|---|---|---|
+| `value` | `any` | The value to start at. |
+| `key` | `string` | Optional key to further filter when multiple children have the same value. |
+
+```typescript
+const adults = db.ref('users').orderByChild('age').startAt(18);
+```
+
+### startAfter
+
+```typescript
+startAfter(value: any, key?: string): DatabaseReference
+```
+
+Returns items starting strictly after the specified value (exclusive).
+
+| Parameter | Type | Description |
+|---|---|---|
+| `value` | `any` | The value to start after. |
+| `key` | `string` | Optional key for further filtering. |
+
+```typescript
+const olderThan18 = db.ref('users').orderByChild('age').startAfter(18);
+```
+
+### endAt
+
+```typescript
+endAt(value: any, key?: string): DatabaseReference
+```
+
+Returns items ending at the specified value (inclusive).
+
+| Parameter | Type | Description |
+|---|---|---|
+| `value` | `any` | The value to end at. |
+| `key` | `string` | Optional key for further filtering. |
+
+```typescript
+const upTo30 = db.ref('users').orderByChild('age').endAt(30);
+```
+
+### endBefore
+
+```typescript
+endBefore(value: any, key?: string): DatabaseReference
+```
+
+Returns items ending strictly before the specified value (exclusive).
+
+| Parameter | Type | Description |
+|---|---|---|
+| `value` | `any` | The value to end before. |
+| `key` | `string` | Optional key for further filtering. |
+
+```typescript
+const under30 = db.ref('users').orderByChild('age').endBefore(30);
+```
+
+### equalTo
+
+```typescript
+equalTo(value: any, key?: string): DatabaseReference
+```
+
+Returns only items matching the specified value exactly.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `value` | `any` | The value to match. |
+| `key` | `string` | Optional key for further filtering. |
+
+```typescript
+const admins = db.ref('users').orderByChild('role').equalTo('admin');
+```
+
+## Other Methods
+
+### onDisconnect
+
+```typescript
+onDisconnect(): OnDisconnect
+```
+
+Returns an [`OnDisconnect`](/lark-sdk/api/ondisconnect) object that lets you register write operations to be performed on the server if the client disconnects.
+
+```typescript
+const presenceRef = db.ref('status/alice');
+presenceRef.onDisconnect().set('offline');
+await presenceRef.set('online');
+```
+
+### transaction
+
+```typescript
+transaction(updateFn: (currentValue: any) => any): Promise<TransactionResult>
+```
+
+Atomically reads and modifies data at this location. The `updateFn` receives the current value and returns the desired new value. If another client writes concurrently, the function is retried with the updated value.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `updateFn` | `(currentValue: any) => any` | A function that takes the current value and returns the new value. Return `undefined` to abort. |
+
+```typescript
+const result = await db.ref('counters/likes').transaction((current) => {
+  return (current || 0) + 1;
+});
+
+console.log(result.committed); // true if the transaction succeeded
+console.log(result.snapshot.val()); // the final value
+```

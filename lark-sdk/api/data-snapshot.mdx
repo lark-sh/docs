@@ -1,0 +1,215 @@
+---
+title: "DataSnapshot"
+description: "API reference for the DataSnapshot class"
+---
+
+A `DataSnapshot` is an immutable representation of data at a specific location and point in time. Snapshots are returned by read operations such as [`once()`](/lark-sdk/api/database-reference#once), [`get()`](/lark-sdk/api/database-reference#get), and [`on()`](/lark-sdk/api/database-reference#on) callbacks.
+
+```typescript
+const snapshot = await db.ref('users/alice').get();
+
+if (snapshot.exists()) {
+  console.log(snapshot.val());
+}
+```
+
+## Properties
+
+| Property | Type | Description |
+|---|---|---|
+| `key` | `string \| null` | The key (last segment of the path) of the location this snapshot represents, or `null` for the root. |
+| `ref` | `DatabaseReference` | The `DatabaseReference` for the location this snapshot was read from. |
+
+## Methods
+
+### val
+
+```typescript
+val(): any
+```
+
+Returns the data contained in this snapshot as a JavaScript value (object, array, string, number, boolean, or `null`). Priority metadata (`.priority`) is stripped from the result.
+
+Returns `null` if no data exists at this location.
+
+```typescript
+const snapshot = await db.ref('users/alice').get();
+const user = snapshot.val();
+// { name: 'Alice', email: 'alice@example.com' }
+```
+
+### exists
+
+```typescript
+exists(): boolean
+```
+
+Returns `true` if this snapshot contains data (i.e., `val()` would return something other than `null`).
+
+```typescript
+const snapshot = await db.ref('users/bob').get();
+if (!snapshot.exists()) {
+  console.log('User not found');
+}
+```
+
+### hasChildren
+
+```typescript
+hasChildren(): boolean
+```
+
+Returns `true` if this snapshot has any child properties.
+
+```typescript
+const snapshot = await db.ref('users/alice').get();
+if (snapshot.hasChildren()) {
+  console.log(`Has ${snapshot.numChildren()} children`);
+}
+```
+
+### hasChild
+
+```typescript
+hasChild(path: string): boolean
+```
+
+Returns `true` if a child exists at the specified relative path.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `path` | `string` | The relative path to check. |
+
+```typescript
+const snapshot = await db.ref('users/alice').get();
+if (snapshot.hasChild('profile/avatar')) {
+  console.log('User has an avatar');
+}
+```
+
+### numChildren
+
+```typescript
+numChildren(): number
+```
+
+Returns the number of immediate children of this snapshot.
+
+```typescript
+const snapshot = await db.ref('users').get();
+console.log(`Total users: ${snapshot.numChildren()}`);
+```
+
+### child
+
+```typescript
+child(path: string): DataSnapshot
+```
+
+Returns a `DataSnapshot` for a child location relative to this snapshot.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `path` | `string` | The relative path to the child. |
+
+```typescript
+const snapshot = await db.ref('users/alice').get();
+const name = snapshot.child('name').val(); // 'Alice'
+```
+
+### forEach
+
+```typescript
+forEach(callback: (child: DataSnapshot) => boolean | void): void
+```
+
+Iterates over each direct child of this snapshot in sorted order. If the callback returns `true`, iteration stops early.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `callback` | `(child: DataSnapshot) => boolean \| void` | Called once for each child. Return `true` to stop iterating. |
+
+```typescript
+const snapshot = await db.ref('users').get();
+snapshot.forEach((childSnapshot) => {
+  console.log(`${childSnapshot.key}: ${childSnapshot.val().name}`);
+});
+```
+
+<Tip>
+Children are iterated in their sort order. If the snapshot was produced by a query with an `orderBy` clause, `forEach` respects that ordering.
+</Tip>
+
+### getPriority
+
+```typescript
+getPriority(): string | number | null
+```
+
+Returns the priority of the data at this location, or `null` if no priority is set.
+
+```typescript
+const snapshot = await db.ref('scores/alice').get();
+const priority = snapshot.getPriority(); // e.g. 100
+```
+
+### exportVal
+
+```typescript
+exportVal(): any
+```
+
+Returns the data including priority metadata (`.priority` and `.value` fields). Useful for serialization or backup scenarios where priority information must be preserved.
+
+```typescript
+const snapshot = await db.ref('scores/alice').get();
+const exported = snapshot.exportVal();
+// { '.value': { score: 100 }, '.priority': 100 }
+```
+
+### toJSON
+
+```typescript
+toJSON(): any
+```
+
+Returns the same result as `exportVal()`. Provided for compatibility with `JSON.stringify()`.
+
+```typescript
+const snapshot = await db.ref('users/alice').get();
+const json = JSON.stringify(snapshot); // uses toJSON() internally
+```
+
+### isVolatile
+
+```typescript
+isVolatile(): boolean
+```
+
+Returns `true` if this snapshot was produced by a high-frequency volatile update. Volatile snapshots are delivered outside the normal consistency model for low-latency use cases such as cursor positions or live indicators.
+
+```typescript
+db.ref('cursors').on('value', (snapshot) => {
+  if (snapshot.isVolatile()) {
+    // High-frequency update — render immediately
+    renderCursors(snapshot.val());
+  }
+});
+```
+
+### getServerTimestamp
+
+```typescript
+getServerTimestamp(): number | null
+```
+
+Returns the server timestamp (in milliseconds since the Unix epoch) associated with this snapshot, or `null` if not available. Primarily useful for volatile snapshots to determine when the update was generated on the server.
+
+```typescript
+db.ref('cursors').on('value', (snapshot) => {
+  const ts = snapshot.getServerTimestamp();
+  if (ts) {
+    console.log(`Server time: ${new Date(ts).toISOString()}`);
+  }
+});
+```

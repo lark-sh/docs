@@ -1,0 +1,163 @@
+---
+title: "Utilities"
+description: "Helper functions and constants exported by the Lark SDK"
+---
+
+The `@lark-sh/client` package exports several utility functions and constants for working with paths, IDs, and server values.
+
+```typescript
+import {
+  generatePushId,
+  ServerValue,
+  normalizePath,
+  joinPath,
+  getParentPath,
+  getKey,
+  isVolatilePath,
+} from '@lark-sh/client';
+```
+
+## generatePushId
+
+```typescript
+generatePushId(): string
+```
+
+Generates a unique, chronologically-sortable 20-character ID. The format is identical to the keys produced by [`DatabaseReference.push()`](/lark-sdk/api/database-reference#push).
+
+IDs are ordered by time, so items created earlier sort before items created later when using `orderByKey()`.
+
+```typescript
+const id = generatePushId();
+// e.g. "-NxK3jR2fHa0YkLm9pQr"
+
+await db.ref(`posts/${id}`).set({
+  title: 'My Post',
+  createdAt: ServerValue.TIMESTAMP,
+});
+```
+
+<Tip>
+Use `generatePushId()` when you need a key before writing, such as when referencing the key in multiple locations within a single `update()` call.
+</Tip>
+
+## ServerValue.TIMESTAMP
+
+```typescript
+ServerValue.TIMESTAMP: object
+```
+
+A placeholder value that the server replaces with its current timestamp (milliseconds since the Unix epoch) at the time the write is committed. Use this instead of `Date.now()` to ensure consistency across clients with different clock offsets.
+
+```typescript
+await db.ref('users/alice').update({
+  lastLogin: ServerValue.TIMESTAMP,
+});
+```
+
+<Note>
+`ServerValue.TIMESTAMP` is a sentinel object, not an actual number. It is resolved server-side when the write is processed.
+</Note>
+
+## normalizePath
+
+```typescript
+normalizePath(path: string): string
+```
+
+Normalizes a database path by removing double slashes, trailing slashes, and leading slashes.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `path` | `string` | The path to normalize. |
+
+```typescript
+normalizePath('//users//alice/');
+// "users/alice"
+
+normalizePath('/');
+// ""
+```
+
+## joinPath
+
+```typescript
+joinPath(...segments: string[]): string
+```
+
+Joins one or more path segments with `/`, producing a normalized path.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `...segments` | `string[]` | Path segments to join. |
+
+```typescript
+joinPath('users', 'alice', 'profile');
+// "users/alice/profile"
+
+joinPath('rooms', 'room1', 'members');
+// "rooms/room1/members"
+```
+
+## getParentPath
+
+```typescript
+getParentPath(path: string): string
+```
+
+Returns the parent path of the given path. Returns an empty string for top-level paths.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `path` | `string` | The path to get the parent of. |
+
+```typescript
+getParentPath('users/alice/profile');
+// "users/alice"
+
+getParentPath('users');
+// ""
+```
+
+## getKey
+
+```typescript
+getKey(path: string): string
+```
+
+Returns the last segment of a path (the key).
+
+| Parameter | Type | Description |
+|---|---|---|
+| `path` | `string` | The path to extract the key from. |
+
+```typescript
+getKey('users/alice/profile');
+// "profile"
+
+getKey('users');
+// "users"
+```
+
+## isVolatilePath
+
+```typescript
+isVolatilePath(path: string, patterns: string[]): boolean
+```
+
+Checks whether a given path matches any of the provided volatile path patterns. Volatile paths are used for high-frequency, low-latency data streams such as cursor positions or live indicators.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `path` | `string` | The path to check. |
+| `patterns` | `string[]` | An array of volatile path patterns to match against. Patterns support `*` as a single-segment wildcard. |
+
+```typescript
+const patterns = ['cursors/*', 'typing/*'];
+
+isVolatilePath('cursors/alice', patterns);
+// true
+
+isVolatilePath('users/alice', patterns);
+// false
+```

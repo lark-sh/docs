@@ -1,0 +1,164 @@
+---
+title: "Writing data"
+description: "Set, update, remove, and push data with the Lark SDK"
+---
+
+# Writing data
+
+The Lark SDK gives you several ways to write data. All write operations are **optimistic** — your local state updates immediately, and the write is sent to the server in the background. If the server rejects it (due to security rules, for example), the local state rolls back.
+
+## `set(value)`
+
+Overwrites the data at a reference. Any existing data at that location — including all children — is replaced.
+
+```typescript
+import { LarkDatabase } from "@lark-sh/client";
+
+const db = new LarkDatabase("my-project/my-database");
+await db.connect({ anonymous: true });
+
+// Write an object
+await db.ref("users/alice").set({
+  name: "Alice",
+  score: 42,
+  level: 3,
+});
+
+// Write a primitive value
+await db.ref("users/alice/score").set(100);
+
+// Write null to delete the data (same as remove)
+await db.ref("users/alice").set(null);
+```
+
+<Warning>
+`set()` replaces everything at that path. If you only want to update specific fields without touching others, use `update()` instead.
+</Warning>
+
+## `update(values)`
+
+Performs a shallow merge at the reference location. Only the specified keys are written — other existing keys are left untouched.
+
+```typescript
+// Only updates "score" and "level", leaves "name" unchanged
+await db.ref("users/alice").update({
+  score: 99,
+  level: 5,
+});
+```
+
+### Multi-path updates
+
+You can update multiple locations atomically by calling `update()` on a parent reference with full paths as keys:
+
+```typescript
+await db.ref().update({
+  "users/alice/score": 99,
+  "leaderboard/alice": 99,
+  "stats/totalGames": 150,
+});
+```
+
+This is powerful for keeping denormalized data in sync. Either all paths update or none do.
+
+<Tip>
+Multi-path updates are one of the most useful patterns in Lark. Use them any time you need to write to several locations as a single atomic operation.
+</Tip>
+
+## `remove()`
+
+Deletes data at a reference. Equivalent to `set(null)`.
+
+```typescript
+await db.ref("users/alice").remove();
+```
+
+## `push(value)`
+
+Generates a unique key and writes the value under it. Returns a reference to the new child location.
+
+```typescript
+const messagesRef = db.ref("chat/messages");
+const newMessageRef = messagesRef.push({
+  text: "Hello!",
+  sender: "alice",
+  timestamp: Date.now(),
+});
+
+console.log(newMessageRef.key); // Something like "-NxKj2a..."
+```
+
+You can also call `push()` without a value to just generate the key:
+
+```typescript
+const newRef = messagesRef.push();
+console.log(newRef.key); // Generated key
+
+// Write to it later
+await newRef.set({
+  text: "Delayed message",
+  sender: "bob",
+});
+```
+
+## `setWithPriority(value, priority)`
+
+Sets data along with a priority value. Priorities affect the default sort order when querying.
+
+```typescript
+await db.ref("tasks/task-1").setWithPriority(
+  { title: "Buy groceries", done: false },
+  1
+);
+
+await db.ref("tasks/task-2").setWithPriority(
+  { title: "Walk the dog", done: false },
+  2
+);
+```
+
+## `setPriority(priority)`
+
+Updates only the priority of an existing node without changing its value.
+
+```typescript
+await db.ref("tasks/task-1").setPriority(10);
+```
+
+## Server values
+
+The SDK provides special server-side values through `ServerValue`.
+
+### `ServerValue.TIMESTAMP`
+
+Resolves to the server's current timestamp (milliseconds since epoch) when the write is processed.
+
+```typescript
+import { LarkDatabase, ServerValue } from "@lark-sh/client";
+
+const db = new LarkDatabase("my-project/my-database");
+await db.connect({ anonymous: true });
+
+await db.ref("users/alice").update({
+  lastSeen: ServerValue.TIMESTAMP,
+});
+```
+
+<Note>
+`ServerValue.TIMESTAMP` is evaluated on the server, so it reflects the server's clock — not the client's. This is important for consistency across clients in different time zones or with inaccurate local clocks.
+</Note>
+
+## Write guarantees
+
+All writes return a promise. The promise resolves when the server has **acknowledged** the write. If the write is rejected (e.g., by security rules), the promise rejects with a `LarkError`.
+
+```typescript
+try {
+  await db.ref("admin/secret").set("top-secret");
+} catch (error) {
+  console.error(error.code); // "permission_denied"
+  console.error(error.message);
+}
+```
+
+Even though writes are optimistic (local state updates immediately), you should still handle errors to catch permission issues and data validation failures.

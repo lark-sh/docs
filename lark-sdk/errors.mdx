@@ -1,0 +1,140 @@
+---
+title: "Error handling"
+description: "Handle errors from the Lark SDK"
+---
+
+# Error handling
+
+The Lark SDK uses a consistent error model. Every error thrown by the SDK is a `LarkError` instance with a machine-readable `code` and a human-readable `message`.
+
+## Error structure
+
+```typescript
+import { LarkDatabase, LarkError } from "@lark-sh/client";
+
+const db = new LarkDatabase("my-project/my-database");
+await db.connect({ anonymous: true });
+
+try {
+  await db.ref("admin/secret").set("hack");
+} catch (error) {
+  if (error instanceof LarkError) {
+    console.log(error.code);    // "permission_denied"
+    console.log(error.message); // "Permission denied at /admin/secret"
+  }
+}
+```
+
+## Error codes
+
+| Code | Description |
+|---|---|
+| `permission_denied` | Security rules rejected the operation. The authenticated user (or anonymous client) doesn't have access to the requested path or operation. |
+| `invalid_data` | The data you tried to write is malformed. This includes invalid key characters, values that exceed size limits, or structurally invalid data. |
+| `not_found` | The requested path doesn't exist. Returned by certain operations that expect existing data. |
+| `invalid_path` | The path string is malformed. Paths can't contain `.`, `#`, `$`, `[`, or `]` characters. |
+| `timeout` | The operation didn't complete within the timeout window (30 seconds by default). |
+| `not_connected` | You attempted an operation that requires a connection while the client is disconnected. |
+| `condition_failed` | A transaction's condition check failed. The data didn't match the expected state. |
+| `max_retries_exceeded` | A transaction was retried 25 times and still couldn't commit due to contention. |
+| `write_tainted` | A write was rejected because it depended on a prior write that failed. This prevents cascading inconsistencies. |
+| `auth_required` | The operation requires authentication, but the client is connected anonymously and security rules demand an authenticated user. |
+
+## Handling write errors
+
+All write operations (`set`, `update`, `remove`, `push`) return promises. Wrap them in try/catch:
+
+```typescript
+try {
+  await db.ref("users/alice/score").set(100);
+  console.log("Write succeeded");
+} catch (error) {
+  if (error instanceof LarkError) {
+    switch (error.code) {
+      case "permission_denied":
+        console.error("You don't have permission to write here");
+        break;
+      case "invalid_data":
+        console.error("Invalid data:", error.message);
+        break;
+      default:
+        console.error("Write failed:", error.code, error.message);
+    }
+  }
+}
+```
+
+## Handling read errors
+
+Read operations (`once`, `get`) can also fail:
+
+```typescript
+try {
+  const snapshot = await db.ref("restricted/data").once("value");
+  console.log(snapshot.val());
+} catch (error) {
+  if (error instanceof LarkError) {
+    console.error("Read failed:", error.code, error.message);
+  }
+}
+```
+
+## Handling transaction errors
+
+Transactions can fail for additional reasons beyond normal write errors:
+
+```typescript
+try {
+  await db.ref("counter").transaction((current) => (current ?? 0) + 1);
+} catch (error) {
+  if (error instanceof LarkError) {
+    switch (error.code) {
+      case "max_retries_exceeded":
+        console.error("Too much contention, try again later");
+        break;
+      case "condition_failed":
+        console.error("Precondition not met");
+        break;
+      default:
+        console.error("Transaction failed:", error.code);
+    }
+  }
+}
+```
+
+## Connection-level errors
+
+For errors that aren't tied to a specific operation — transport failures, authentication errors, protocol issues — use `db.onError()`:
+
+```typescript
+db.onError((error) => {
+  console.error("Connection error:", error.code, error.message);
+
+  // You might want to show a notification to the user
+  showErrorNotification(error.message);
+});
+```
+
+<Note>
+`db.onError()` returns an unsubscribe function, just like other event listeners. Clean it up when you no longer need it.
+</Note>
+
+```typescript
+const unsubscribe = db.onError((error) => {
+  console.error(error);
+});
+
+// Later
+unsubscribe();
+```
+
+## Best practices
+
+<Tip>
+Always handle `permission_denied` errors in your UI. They usually mean a user is trying to access data they shouldn't — either a bug in your security rules or a user navigating somewhere unexpected.
+</Tip>
+
+- **Wrap writes in try/catch.** Even if you're confident your security rules will allow the write, network issues or data validation can cause failures.
+- **Log errors with their codes.** The `code` field is stable and machine-readable. Use it for programmatic decisions. Use `message` for human-readable logging.
+- **Use `db.onError()` as a safety net.** It catches connection-level issues that individual operation error handling might miss.
+- **Don't swallow errors silently.** At minimum, log them. Silently dropped errors make debugging much harder.

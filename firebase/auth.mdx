@@ -1,0 +1,58 @@
+---
+title: "Firebase Auth with Lark"
+description: "Use Firebase Authentication with your Lark database"
+---
+
+If your users authenticate through Firebase Auth, Lark can validate those tokens directly. No code changes needed on the client.
+
+## Setup
+
+In your Lark project settings, set the **Firebase Auth Project ID** to your Firebase project ID. You can find this in the Firebase console under Project Settings.
+
+This tells Lark how to validate the RS256-signed Firebase Auth tokens your clients send.
+
+## How it works
+
+1. Your client authenticates with Firebase Auth as usual.
+2. The Firebase SDK sends the user's ID token when connecting to the database.
+3. Lark's proxy layer validates the token's RS256 signature using Firebase's public keys.
+4. Once validated, the `auth` object in your security rules contains the user's `uid` and claims from the Firebase token.
+
+Your existing authentication flow works unchanged:
+
+```javascript
+// Your existing Firebase Auth code works as-is
+const user = firebase.auth().currentUser;
+const token = await user.getIdToken();
+
+// The Firebase SDK automatically sends this token to Lark
+// when it connects to the database. You don't need to do
+// anything extra.
+```
+
+<Note>Firebase Auth tokens are validated by Lark's proxy layer, not the database server itself. The proxy verifies the RS256 signature against Firebase's public keys and passes the validated identity to the database.</Note>
+
+## Security rules
+
+Once a Firebase Auth token is validated, the `auth` variable in your security rules works exactly as it does in Firebase:
+
+```json
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth.uid === $uid",
+        ".write": "auth.uid === $uid"
+      }
+    }
+  }
+}
+```
+
+Custom claims from Firebase Auth tokens are available under `auth.token`. For example, if you set an `admin` claim, you can check `auth.token.admin === true` in your rules.
+
+## Using Lark's own auth instead
+
+You can also use Lark's own token system (HS256 JWTs signed with your secret key) alongside or instead of Firebase Auth. This is useful if you're migrating away from Firebase Auth entirely or building new features that don't depend on it.
+
+See [Authentication](/platform/authentication) for details on Lark's native auth system.

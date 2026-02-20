@@ -1,0 +1,172 @@
+---
+title: "Transactions"
+description: "Atomic operations with the Lark SDK"
+---
+
+# Transactions
+
+Transactions let you update data based on its current value without worrying about conflicts from other clients. They're essential for counters, inventory systems, auctions, and any scenario where a write depends on the existing data.
+
+## Callback-style transactions
+
+The most common pattern. You pass a function that receives the current value and returns the new value:
+
+```typescript
+import { LarkDatabase } from "@lark-sh/client";
+
+const db = new LarkDatabase("my-project/my-database");
+await db.connect({ anonymous: true });
+
+const result = await db.ref("counters/pageViews").transaction((currentValue) => {
+  // currentValue is the current data at this path (or null if it doesn't exist)
+  return (currentValue ?? 0) + 1;
+});
+
+console.log(result.committed); // true if the transaction succeeded
+console.log(result.snapshot.val()); // The final committed value
+```
+
+### How it works
+
+1. The SDK reads the current value at the path.
+2. Your update function runs with that value.
+3. The SDK sends the new value to the server along with the expected current value.
+4. If another client changed the data in the meantime, the server rejects the write.
+5. The SDK re-reads the latest value and runs your function again.
+6. This repeats until the write succeeds or the retry limit is reached.
+
+<Note>
+Your update function may be called **multiple times** if there are concurrent writes. Make sure it has no side effects — don't make network requests, modify external state, or log analytics inside it.
+</Note>
+
+### Aborting a transaction
+
+Return `undefined` from your update function to abort the transaction without writing anything:
+
+```typescript
+const result = await db.ref("inventory/item-1").transaction((current) => {
+  if (current === null) {
+    // Item doesn't exist, abort
+    return undefined;
+  }
+
+  if (current.quantity <= 0) {
+    // Out of stock, abort
+    return undefined;
+  }
+
+  return {
+    ...current,
+    quantity: current.quantity - 1,
+  };
+});
+
+if (!result.committed) {
+  console.log("Transaction was aborted");
+}
+```
+
+### Retry limit
+
+Transactions automatically retry up to **25 times**. If they still can't commit after 25 attempts (due to extremely high contention), the promise rejects with a `max_retries_exceeded` error.
+
+```typescript
+try {
+  await db.ref("hot-counter").transaction((val) => (val ?? 0) + 1);
+} catch (error) {
+  if (error.code === "max_retries_exceeded") {
+    console.error("Too much contention on this path");
+  }
+}
+```
+
+## Multi-path transactions
+
+For atomic updates across multiple paths, pass an object with path-value pairs:
+
+```typescript
+await db.transaction({
+  "/users/alice/balance": 50,
+  "/users/bob/balance": 150,
+  "/transfers/latest": { from: "alice", to: "bob", amount: 100 },
+});
+```
+
+### Array syntax with conditions
+
+For more complex scenarios, you can use the array syntax to specify operations and conditions:
+
+```typescript
+await db.transaction([
+  {
+    path: "/users/alice/balance",
+    op: "set",
+    value: 50,
+    condition: { type: "value", value: 150 }, // Only if current value is 150
+  },
+  {
+    path: "/users/bob/balance",
+    op: "set",
+    value: 250,
+    condition: { type: "value", value: 150 }, // Only if current value is 150
+  },
+]);
+```
+
+If any condition fails, the entire transaction is rejected and no writes are applied.
+
+## Examples
+
+### Increment a counter
+
+```typescript
+await db.ref("stats/totalGames").transaction((current) => {
+  return (current ?? 0) + 1;
+});
+```
+
+### Conditional update
+
+Only update a player's high score if the new score is actually higher:
+
+```typescript
+const newScore = 250;
+
+const result = await db.ref("players/alice/highScore").transaction((current) => {
+  if (current !== null && current >= newScore) {
+    // Current high score is already higher, abort
+    return undefined;
+  }
+  return newScore;
+});
+
+if (result.committed) {
+  console.log("New high score recorded:", result.snapshot.val());
+} else {
+  console.log("Existing high score is higher, no update needed");
+}
+```
+
+### Claim a unique resource
+
+Use a transaction to ensure only one client can claim something:
+
+```typescript
+const result = await db.ref("game/crown").transaction((current) => {
+  if (current !== null) {
+    // Someone already claimed it
+    return undefined;
+  }
+  return { claimedBy: "alice", claimedAt: Date.now() };
+});
+
+if (result.committed) {
+  console.log("Crown claimed!");
+} else {
+  console.log("Someone else got it first");
+}
+```
+
+<Warning>
+Avoid running transactions on paths with very high write contention from many clients simultaneously. If you're hitting the retry limit frequently, consider restructuring your data to reduce contention — for example, by sharding counters across multiple paths.
+</Warning>

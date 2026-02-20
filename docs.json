@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Lark",
   "colors": {
     "primary": "#16A34A",
     "light": "#07C983",
@@ -11,76 +11,134 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
             "group": "Getting started",
             "pages": [
               "index",
-              "quickstart",
-              "development"
+              "quickstart"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Dashboard",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "dashboard/overview",
+              "dashboard/settings",
+              "dashboard/databases",
+              "dashboard/rules-editor",
+              "dashboard/monitoring",
+              "dashboard/pricing"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "Platform",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Data",
             "pages": [
-              "api-reference/introduction"
+              "platform/data-structure",
+              "platform/read-write",
+              "platform/sorting",
+              "platform/limits"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Security rules",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "platform/security-rules",
+              "platform/rules-reference",
+              "platform/rules-examples"
+            ]
+          },
+          {
+            "group": "Real-time features",
+            "pages": [
+              "platform/subscriptions",
+              "platform/presence",
+              "platform/volatile",
+              "platform/transactions"
+            ]
+          },
+          {
+            "group": "Authentication",
+            "pages": [
+              "platform/authentication"
+            ]
+          },
+          {
+            "group": "Transports",
+            "pages": [
+              "platform/transports"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Firebase SDKs",
+        "groups": [
+          {
+            "group": "Getting started",
+            "pages": [
+              "firebase/overview",
+              "firebase/setup"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "firebase/auth",
+              "firebase/migration",
+              "firebase/compatibility"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Lark SDK",
+        "groups": [
+          {
+            "group": "Getting started",
+            "pages": [
+              "lark-sdk/overview",
+              "lark-sdk/quickstart"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "lark-sdk/connecting",
+              "lark-sdk/references",
+              "lark-sdk/writing",
+              "lark-sdk/reading",
+              "lark-sdk/subscriptions",
+              "lark-sdk/queries",
+              "lark-sdk/transactions",
+              "lark-sdk/auth",
+              "lark-sdk/offline",
+              "lark-sdk/ondisconnect",
+              "lark-sdk/errors",
+              "lark-sdk/fb-v8"
+            ]
+          },
+          {
+            "group": "API reference",
+            "pages": [
+              "lark-sdk/api/lark-database",
+              "lark-sdk/api/database-reference",
+              "lark-sdk/api/data-snapshot",
+              "lark-sdk/api/ondisconnect",
+              "lark-sdk/api/lark-error",
+              "lark-sdk/api/utilities"
             ]
           }
         ]
       }
     ],
     "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
+      "anchors": []
     }
   },
   "logo": {
@@ -90,33 +148,20 @@
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "label": "Dashboard",
+        "href": "https://admin.larkdb.net"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
+    ]
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "cursor",
+      "vscode"
+    ]
   },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
-  }
+  "footer": {}
 }

@@ -1,0 +1,176 @@
+---
+title: "Connecting"
+description: "Manage connections, lifecycle, and transport options"
+---
+
+# Connecting
+
+The `LarkDatabase` class is your entry point. You create an instance, configure how it should connect, and then call `connect()`.
+
+## Creating an instance
+
+The constructor takes a single string in the format `projectId/databaseId`:
+
+```typescript
+import { LarkDatabase } from "@lark-sh/client";
+
+const db = new LarkDatabase("my-project/my-database");
+```
+
+This doesn't open a connection yet. It just creates the client instance.
+
+## Connect options
+
+Call `db.connect(options)` to establish a connection. It returns a promise that resolves when you're fully connected and authenticated.
+
+```typescript
+await db.connect({
+  anonymous: true,
+});
+```
+
+Here's the full set of options:
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `anonymous` | `boolean` | `false` | Connect without user credentials. |
+| `token` | `string` | — | A JWT for authenticated access. |
+| `domain` | `string` | `'larkdb.net'` | The Lark server domain. |
+| `transport` | `'auto' \| 'websocket' \| 'webtransport'` | `'auto'` | Which transport protocol to use. |
+| `webtransportTimeout` | `number` | `2000` | Milliseconds to wait for WebTransport before falling back to WebSocket. |
+
+<Note>
+You must provide either `anonymous: true` or a `token`. If you pass both, the token takes priority.
+</Note>
+
+### Transport selection
+
+By default, the SDK uses `'auto'` mode. It tries WebTransport (HTTP/3) first for lower latency. If WebTransport isn't available or doesn't connect within `webtransportTimeout` milliseconds, it falls back to WebSocket.
+
+```typescript
+// Force WebSocket only
+await db.connect({
+  anonymous: true,
+  transport: "websocket",
+});
+
+// Force WebTransport only (will fail if not supported)
+await db.connect({
+  anonymous: true,
+  transport: "webtransport",
+});
+
+// Auto with a longer timeout for WebTransport negotiation
+await db.connect({
+  anonymous: true,
+  transport: "auto",
+  webtransportTimeout: 5000,
+});
+```
+
+## Connection states
+
+A connection moves through these states in order:
+
+```
+disconnected → connecting → connected → joined → authenticated
+```
+
+| State | Meaning |
+|---|---|
+| `disconnected` | No connection. Initial state or after `disconnect()`. |
+| `connecting` | Transport negotiation in progress. |
+| `connected` | Transport established, handshake in progress. |
+| `joined` | Joined the database, awaiting authentication. |
+| `authenticated` | Fully ready. You can read and write data. |
+
+## Properties
+
+Once connected, several properties are available on the `db` instance:
+
+```typescript
+// Whether the connection is fully authenticated and ready
+db.connected; // boolean
+
+// Current connection state string
+db.state; // 'disconnected' | 'connecting' | 'connected' | 'joined' | 'authenticated'
+
+// Auth info (null if anonymous)
+db.auth; // { uid, provider, token } | null
+
+// Which transport is active
+db.transportType; // 'websocket' | 'webtransport' | null
+
+// Clock skew between client and server (milliseconds)
+db.serverTimeOffset; // number
+
+// Currently registered volatile paths
+db.volatilePaths; // string[]
+```
+
+## Lifecycle events
+
+Use callback methods to react to connection state changes:
+
+```typescript
+// Fires when the connection is fully established
+db.onConnect(() => {
+  console.log("Connected and ready");
+});
+
+// Fires when the connection drops
+db.onDisconnect(() => {
+  console.log("Connection lost");
+});
+
+// Fires when the SDK is attempting to reconnect
+db.onReconnecting((attempt) => {
+  console.log(`Reconnection attempt #${attempt}`);
+});
+
+// Fires on connection-level errors
+db.onError((error) => {
+  console.error("Connection error:", error.code, error.message);
+});
+```
+
+<Tip>
+All lifecycle callbacks return an unsubscribe function, so you can stop listening when you no longer need them.
+</Tip>
+
+```typescript
+const unsubscribe = db.onConnect(() => {
+  console.log("Connected!");
+});
+
+// Later, stop listening
+unsubscribe();
+```
+
+## Disconnecting
+
+There are two ways to take a connection offline, and they behave differently:
+
+### `disconnect()`
+
+Fully tears down the connection. Clears all cached data, removes all subscriptions, and resets the client. Use this when you're done with the database entirely.
+
+```typescript
+db.disconnect();
+```
+
+### `goOffline()`
+
+Pauses the connection but preserves your local cache and subscription registrations. When you call `goOnline()` later, subscriptions are re-established and you pick up where you left off.
+
+```typescript
+// Pause
+db.goOffline();
+
+// Resume later
+db.goOnline();
+```
+
+<Warning>
+After calling `disconnect()`, you need to call `connect()` again with full options to re-establish the connection. After `goOffline()`, a simple `goOnline()` is enough.
+</Warning>

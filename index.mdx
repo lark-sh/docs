@@ -1,97 +1,72 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "What is Lark?"
+description: "A real-time database built for multiplayer games and interactive apps"
 ---
 
-## Setting up
+Lark is a real-time database designed for the modern era. You write data, your users see it instantly — across every connected client, in under 50 milliseconds.
 
-Get your documentation site up and running in minutes.
+If you've ever used Firebase Realtime Database, Lark will feel familiar. But Lark is built from the ground up in Rust, with the performance and features that today's multiplayer games and collaborative apps demand.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+## Why Lark?
 
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Real-time by default" icon="bolt">
+    Every write is broadcast to every subscriber in real time. No polling, no manual refresh. Your UI stays in sync automatically.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Built for speed" icon="gauge-max">
+    Sub-50ms p99 latency, powered by a Rust engine with a thread-per-core architecture. No garbage collector pauses, no surprises.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Tiny client" icon="feather">
+    The Lark JS SDK is ~20KB gzipped. Install it, connect, and start building — no heavyweight framework required.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="WebTransport ready" icon="wifi">
+    First-class WebTransport support for UDP-like unreliable delivery. Perfect for cursor positions, player movement, and other high-frequency data.
   </Card>
-</Columns>
+  <Card title="Firebase SDK compatible" icon="plug">
+    Already using Firebase Realtime Database? Point your existing Firebase SDK at Lark and it just works. Change one URL.
+  </Card>
+  <Card title="Security rules" icon="shield-halved">
+    Declarative, path-based security rules that run on the server. Control who can read and write what, with full access to auth context and existing data.
+  </Card>
+</CardGroup>
 
-## Create beautiful pages
+## How it works
 
-Everything you need to create world-class documentation.
+Lark stores your data as a JSON tree. You read and write to paths in that tree, and Lark handles synchronization across all connected clients.
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+```typescript
+import { LarkDatabase } from '@lark-sh/client';
 
-## Need inspiration?
+const db = new LarkDatabase('my-project/my-database', { anonymous: true });
+await db.connect();
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+// Write data
+await db.ref('players/alice').set({ name: 'Alice', score: 0 });
+
+// Subscribe to real-time updates
+db.ref('players').on('value', (snapshot) => {
+  console.log('Players updated:', snapshot.val());
+});
+
+// Every connected client sees the change instantly
+await db.ref('players/alice/score').set(42);
+```
+
+That's it. No REST endpoints to build, no WebSocket plumbing to manage, no cache invalidation to think about.
+
+## Get started
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Create a project and build your first real-time app in minutes.
+  </Card>
+  <Card title="Use with Firebase SDKs" icon="plug" href="/firebase/overview">
+    Already on Firebase? Learn how to point your existing code at Lark.
+  </Card>
+  <Card title="Lark SDK" icon="code" href="/lark-sdk/overview">
+    Get started with the native Lark JavaScript/TypeScript SDK.
+  </Card>
+  <Card title="Dashboard" icon="grid-2" href="/dashboard/overview">
+    Explore the Lark dashboard — manage projects, databases, rules, and metrics.
+  </Card>
+</CardGroup>

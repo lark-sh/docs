@@ -1,0 +1,144 @@
+---
+title: "Reading and writing data"
+description: "Core operations for getting data in and out of Lark"
+---
+
+Lark gives you a small set of operations that cover everything you need: writing data, reading it back, and a few special tools for common patterns. Every operation targets a specific path in your [JSON tree](/platform/data-structure).
+
+## Set
+
+`set` overwrites the value at a path completely. Whatever was there before is gone — replaced by the new value.
+
+```typescript
+// Write an object
+await db.ref('players/alice').set({
+  name: 'Alice',
+  score: 0
+});
+
+// Write a primitive value
+await db.ref('players/alice/score').set(42);
+```
+
+If you `set` an object, it replaces the entire object at that path. If Alice had an `online` field before, it's gone now — because the new object doesn't include it.
+
+<Warning>
+`set` is a full replacement, not a merge. If you only want to update a few fields, use `update` instead.
+</Warning>
+
+## Update
+
+`update` performs a shallow merge at a path. It updates the keys you specify and leaves everything else untouched.
+
+```typescript
+// Only updates 'score' — 'name' and other fields are preserved
+await db.ref('players/alice').update({
+  score: 42
+});
+```
+
+This is what you want most of the time when modifying existing data. Changed the player's score? Update just the score. Toggled their online status? Update just that field.
+
+### Multi-path atomic updates
+
+`update` also supports atomic writes across multiple paths. Prefix keys with `/` to write to absolute paths in a single atomic operation:
+
+```typescript
+await db.ref().update({
+  '/players/alice/score': 10,
+  '/players/bob/score': 20,
+  '/leaderboard/alice': 10,
+  '/leaderboard/bob': 20
+});
+```
+
+All four writes happen together. Either they all succeed or none of them do. This is essential for keeping denormalized data consistent — when you store a score in two places, you want both to update at the same time.
+
+<Tip>
+Multi-path updates are one of the most powerful tools in Lark. Any time you need to write to multiple locations atomically — updating a leaderboard, moving an item between lists, recording an action and its side effects — reach for a multi-path update.
+</Tip>
+
+## Remove
+
+`remove` deletes the data at a path. It's equivalent to calling `set` with `null`.
+
+```typescript
+// These two are equivalent
+await db.ref('players/alice').remove();
+await db.ref('players/alice').set(null);
+```
+
+When you remove a node, its parent will also be removed if it has no other children. Lark doesn't store empty objects — the tree is pruned automatically.
+
+## Push
+
+`push` generates a unique, chronologically sortable key and writes your data under it. This is perfect for lists where items are added over time — chat messages, event logs, game actions.
+
+```typescript
+const messagesRef = db.ref('messages');
+
+const newRef = await messagesRef.push({
+  user: 'alice',
+  text: 'Hello, world!',
+  timestamp: ServerValue.TIMESTAMP
+});
+
+console.log(newRef.key); // Something like '-OPNxyz123abc'
+```
+
+Push keys are designed to sort chronologically. If two clients push at the same time, both writes succeed and the keys maintain a consistent order. No conflicts, no overwrites.
+
+<Note>
+Push keys contain a timestamp component plus randomness. They sort in chronological order, so querying with `orderByKey` gives you messages in the order they were created.
+</Note>
+
+## Once (read)
+
+`once` reads the current value at a path and returns a snapshot. It's a one-time read — unlike a subscription, it doesn't listen for future changes.
+
+```typescript
+const snapshot = await db.ref('players/alice').once('value');
+
+if (snapshot.exists()) {
+  console.log(snapshot.val()); // { name: 'Alice', score: 42 }
+} else {
+  console.log('No data at this path');
+}
+```
+
+The snapshot gives you the data as it exists on the server at that moment. Use `val()` to get the raw JSON value, `exists()` to check if there's data there, and `child()` to navigate into nested values.
+
+## Server values
+
+Sometimes you want the server to fill in a value rather than the client. `ServerValue.TIMESTAMP` is replaced by the server's current time (in milliseconds since epoch) when the write is processed.
+
+```typescript
+await db.ref('players/alice').update({
+  lastSeen: ServerValue.TIMESTAMP
+});
+```
+
+This ensures consistency. If you used `Date.now()` on the client, every device's clock would produce a slightly different value. With `ServerValue.TIMESTAMP`, every client agrees on the same time.
+
+<Info>
+Server values are resolved on write. When you read the data back, you'll see the actual timestamp number — not a placeholder.
+</Info>
+
+## Optimistic writes
+
+When you write data, Lark applies the change to your local state immediately — before the server confirms it. Your UI updates instantly.
+
+Here's the flow:
+
+1. You call `set`, `update`, or `remove`.
+2. Lark applies the change locally right away. Any active subscriptions fire with the new data.
+3. The write is sent to the server.
+4. The server processes it (checking security rules, validating data).
+5. If the server accepts, nothing else happens — your local state was already correct.
+6. If the server rejects (permissions, validation), Lark rolls back the local change and your subscriptions fire again with the corrected data.
+
+This means your app feels instant. Users see their changes reflected immediately, and in the vast majority of cases, the server will accept the write. On the rare occasion a write is rejected, the rollback happens seamlessly.
+
+<Tip>
+Optimistic writes work with subscriptions. If you're subscribed to a path and you write to it, your subscription callback fires immediately with the new value — before the round trip to the server.
+</Tip>

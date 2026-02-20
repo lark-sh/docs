@@ -1,0 +1,50 @@
+---
+title: "Monitoring"
+description: "Track performance, usage, and billing from your project dashboard"
+---
+
+Your project dashboard shows real-time metrics and usage data so you can keep tabs on how your project is performing.
+
+## Statistics cards
+
+These cards show a snapshot of the last 24 hours:
+
+- **Peak CCU**: Peak and current concurrent users.
+- **Bandwidth**: Total bytes in and out, with a breakdown.
+- **Operations**: Total writes, reads, and events sent.
+- **Processing**: Average latency in milliseconds.
+
+## Charts
+
+Interactive line charts let you drill into trends. Use the time range selector to switch between **1 hour**, **24 hours**, and **7 days**.
+
+Available charts:
+
+- **CCU over time**
+- **Bandwidth** (bytes in and out)
+- **Operations** (writes, reads, events)
+- **Latency** (p50)
+
+## Billing usage
+
+This section shows your current billing period's usage against your plan limits:
+
+- **Peak CCU** vs. your plan limit (default 5,000)
+- **Total bandwidth** vs. your plan limit (default 50GB)
+
+Usage is color-coded so you can spot issues at a glance:
+
+- **Green**: Normal usage.
+- **Yellow**: 80% or more of your limit.
+- **Red**: 95% or more of your limit.
+
+## Events log
+
+A log of recent system events from the last 7 days. You will see entries like:
+
+- High latency warnings
+- Approaching CCU limit
+- Connection rejected (at capacity)
+- Storage warnings
+
+<Note>If you see repeated "connection rejected" events, you are hitting your CCU limit. Consider upgrading your plan or optimizing your connection patterns.</Note>

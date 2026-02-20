@@ -1,0 +1,118 @@
+---
+title: "Data structure"
+description: "How Lark organizes your data as a JSON tree"
+---
+
+Everything in Lark is a JSON tree. Your entire database is one big nested JSON object, and every piece of data lives at a specific path within it.
+
+## Projects and databases
+
+Your data is organized into two levels:
+
+- **Project** — A container for your app. You create projects in the [dashboard](https://admin.larkdb.net). Each project has a unique ID, security rules, and connection settings.
+- **Database** — A single JSON tree inside a project. A project can have many databases. You might use one database per game room, per user session, or just one for your whole app.
+
+When you connect, you specify both:
+
+```typescript
+const db = new LarkDatabase('my-project/my-database');
+```
+
+## The JSON tree
+
+Your database is a single JSON document. Here's what one might look like:
+
+```json
+{
+  "players": {
+    "alice": {
+      "name": "Alice",
+      "score": 250,
+      "online": true
+    },
+    "bob": {
+      "name": "Bob",
+      "score": 180,
+      "online": false
+    }
+  },
+  "settings": {
+    "maxPlayers": 10,
+    "gameMode": "capture-the-flag"
+  }
+}
+```
+
+Every value in this tree has a path. The path `/players/alice/score` points to the number `250`. The path `/settings/gameMode` points to the string `"capture-the-flag"`. The path `/players` points to the entire object containing Alice and Bob.
+
+## Paths
+
+Paths are forward-slash separated strings. Each segment between slashes is a key.
+
+| Path | Points to |
+|------|-----------|
+| `/` | The root of the database |
+| `/players` | The `players` object |
+| `/players/alice` | Alice's entire object |
+| `/players/alice/score` | The number `250` |
+| `/settings/maxPlayers` | The number `10` |
+
+Paths always start from the root. There's no concept of a "relative" path in the database itself — though SDKs let you navigate from one reference to another using methods like `child()` and `parent`.
+
+## Keys
+
+Each segment in a path is a key. Keys are the strings that identify children within a parent object.
+
+Keys have a few rules:
+
+- Maximum **768 UTF-8 bytes** in length.
+- Cannot contain any of these characters: `.` `$` `#` `[` `]` `/`
+- Cannot contain ASCII control characters (0x00–0x1F, 0x7F).
+- Keys starting with `.` are reserved for Lark's internal use (like `.priority` and `.value`).
+
+<Warning>
+Key validation is strict. If you try to write data with an invalid key, the write will be rejected. Watch out for characters like `.` and `$` that are common in other systems but forbidden here.
+</Warning>
+
+## References
+
+A reference is a pointer to a specific path in your database. You don't read or write data directly — you create a reference to a path, then perform operations on it.
+
+```typescript
+// Create a reference to /players/alice
+const aliceRef = db.ref('players/alice');
+
+// Read the data at that path
+const snapshot = await aliceRef.once('value');
+console.log(snapshot.val()); // { name: 'Alice', score: 250, online: true }
+
+// Write to that path
+await aliceRef.set({ name: 'Alice', score: 300, online: true });
+
+// Subscribe to changes at that path
+aliceRef.on('value', (snapshot) => {
+  console.log('Alice changed:', snapshot.val());
+});
+```
+
+References are lightweight. Creating one doesn't fetch data or open a connection — it just records which path you want to interact with.
+
+You can navigate from one reference to another:
+
+```typescript
+const playersRef = db.ref('players');
+const aliceRef = playersRef.child('alice');
+const scoreRef = aliceRef.child('score');
+
+console.log(scoreRef.path); // 'players/alice/score'
+```
+
+## Schemaless by design
+
+Lark doesn't enforce a schema. You write JSON, Lark stores it. Any valid JSON value — strings, numbers, booleans, objects, or null — can live at any path.
+
+This makes it fast to prototype and iterate. You don't need to define tables, run migrations, or update schemas. Just write the data you need, where you need it.
+
+<Tip>
+Just because Lark is schemaless doesn't mean your data should be chaotic. Use [security rules](/platform/security-rules) with `.validate` to enforce structure on writes — required fields, type checking, value ranges. You get the flexibility of schemaless storage with the safety of validation.
+</Tip>

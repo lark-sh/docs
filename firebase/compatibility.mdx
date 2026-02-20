@@ -1,0 +1,61 @@
+---
+title: "Compatibility notes"
+description: "What's supported, what's different, and known limitations"
+---
+
+Lark implements the Firebase Realtime Database wire protocol. Here's what works, what's different, and what to watch out for.
+
+## Fully supported
+
+All core Firebase RTDB operations work with Lark:
+
+- **Reads and writes** — `set`, `update`, `remove`, `push`, `once`
+- **Subscriptions** — `on` / `off` with all event types: `value`, `child_added`, `child_changed`, `child_removed`, `child_moved`
+- **Queries** — `orderByChild`, `orderByKey`, `orderByValue`, `orderByPriority`, `limitToFirst`, `limitToLast`, `startAt`, `endAt`, `equalTo`
+- **Transactions** — Full transaction support with retries
+- **onDisconnect** — `onDisconnect().set()`, `onDisconnect().update()`, `onDisconnect().remove()`, `onDisconnect().cancel()`
+- **Server values** — `ServerValue.TIMESTAMP`
+- **Priority** — Setting and querying by priority
+
+## Wire protocol
+
+Lark implements the Firebase RTDB wire protocol. The Firebase SDK connects over WebSocket and communicates using the same JSON message format. From the SDK's perspective, Lark is indistinguishable from Firebase's servers.
+
+## Security rules
+
+Same syntax, same semantics. Your existing Firebase security rules work in Lark without modification. The `auth` object, `$variables`, `.read`, `.write`, `.validate`, `.indexOn`, `newData`, `data`, `root` — all of it works identically.
+
+## What's different
+
+A few things work differently in Lark:
+
+### Connection URL
+
+You connect to `your-project-id.larkdb.net` instead of `your-project.firebaseio.com`. This is the only required code change.
+
+### No Firebase REST API
+
+Lark doesn't expose a REST API for database operations. If your backend uses `https://your-project.firebaseio.com/path.json` to read or write data, you'll need to switch to the SDK or use the Lark dashboard.
+
+### No Firebase CLI integration
+
+`firebase deploy --only database:rules` won't work with Lark. Edit and deploy your security rules in the Lark dashboard instead.
+
+### No `.info/serverTimeOffset`
+
+Lark does not support the `.info/serverTimeOffset` path. If you need server time offset, use the [Lark SDK](/lark-sdk/overview) which provides this natively.
+
+<Info>The `.info/connected` path works as expected. You can still listen for connection state changes.</Info>
+
+## Additional Lark features
+
+Even when using Firebase SDKs, you benefit from Lark's server-side features automatically:
+
+- **Volatile path batching** — Updates to volatile paths are batched for efficiency.
+- **Shared view optimization** — When multiple clients subscribe to the same path, Lark optimizes the server-side work.
+- **Lower latency** — Sub-50ms p99 latency for reads and writes.
+- **CCU-based pricing** — No per-operation charges.
+
+To use Lark's client-side features like WebTransport or the streamlined API, switch to the [Lark SDK](/lark-sdk/overview).
+
+<Note>You can use Firebase SDKs and the Lark SDK in the same project. Some clients can connect with Firebase SDKs while others use the Lark SDK — they all talk to the same database.</Note>

@@ -1,0 +1,84 @@
+---
+title: "Security rules"
+description: "Control who can read and write your data"
+---
+
+Security rules are the gatekeepers of your Lark database. They're declarative JSON expressions that live alongside your data structure, and they're evaluated entirely on the server. No matter what a client sends, the rules decide whether the operation goes through.
+
+## How rules work
+
+You define rules as a JSON object that mirrors the shape of your database. At each path, you can attach three rule types:
+
+- **`.read`** — Can this client read data at this path?
+- **`.write`** — Can this client write data at this path?
+- **`.validate`** — Is the incoming data valid?
+
+Rules evaluate to `true` or `false`. You can use simple booleans or expressions that reference auth state, existing data, and the incoming write.
+
+```json
+{
+  "rules": {
+    "players": {
+      "$playerId": {
+        ".read": true,
+        ".write": "auth.uid === $playerId"
+      }
+    }
+  }
+}
+```
+
+In this example, anyone can read any player's data, but only the player themselves can write to their own node.
+
+## Cascading rules
+
+`.read` and `.write` rules **cascade downward**. If you grant `.read` at `/users`, every child path under `/users` is also readable. A rule at a parent node overrides any restrictive rule on a child — once access is granted, it can't be taken away deeper in the tree.
+
+<Warning>
+Be intentional about where you place `.read` and `.write` rules. A permissive rule high in the tree grants access to everything below it.
+</Warning>
+
+`.validate` rules are the exception. They do **not** cascade. Every node that has a `.validate` rule must independently pass validation for a write to succeed. This lets you enforce structure at every level of your data.
+
+## Wildcards
+
+Use `$wildcard` path segments to match any child key. The matched value becomes available as a variable in your rule expressions.
+
+```json
+{
+  "rules": {
+    "rooms": {
+      "$roomId": {
+        ".read": true,
+        "messages": {
+          "$messageId": {
+            ".write": "auth !== null",
+            ".validate": "newData.hasChildren(['text', 'author'])"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Here, `$roomId` matches any room key and `$messageId` matches any message key. You can reference these variables in expressions — for example, `"auth.uid === $roomId"` to restrict access to the room owner.
+
+## Editing rules
+
+You edit your security rules in the Lark dashboard. Go to **Project Settings > Security Rules**, paste or edit your JSON, and click **Publish**. Rules take effect immediately across all connected clients.
+
+<Tip>
+Start with restrictive rules and open access only where you need it. You can always use the rules simulator in the dashboard to test whether a specific operation would be allowed.
+</Tip>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Rules reference" icon="book" href="/platform/rules-reference">
+    Full reference for every variable, method, and operator available in rule expressions.
+  </Card>
+  <Card title="Rules examples" icon="code" href="/platform/rules-examples">
+    Copy-paste patterns for common scenarios — user-owned data, role-based access, write-once data, and more.
+  </Card>
+</CardGroup>

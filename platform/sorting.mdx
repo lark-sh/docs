@@ -1,0 +1,174 @@
+---
+title: "Sorting and filtering"
+description: "How Lark orders data and how to query subsets of it"
+---
+
+When you subscribe to or read a list of children, Lark returns them in a defined order. You control that order with query methods — sorting by key, by value, or by a nested child field — and you can filter the results down to just the slice you need.
+
+## Default ordering
+
+By default, children are sorted by their key. This is the order you get when you read a path without specifying any ordering.
+
+## Ordering modes
+
+Lark supports four ordering modes. You pick one per query.
+
+### Order by key
+
+Sorts children by their key name. Keys that are valid 32-bit integers are sorted numerically first, then remaining string keys are sorted lexicographically.
+
+```typescript
+// Get all players sorted by their key
+db.ref('players').orderByKey()
+```
+
+This is the default behavior, but specifying it explicitly makes your intent clear.
+
+### Order by value
+
+Sorts children by their value directly. This works when the children are primitive values (strings, numbers, booleans), not objects.
+
+```typescript
+// Scores stored as: { "alice": 250, "bob": 180, "charlie": 300 }
+db.ref('scores').orderByValue()
+```
+
+### Order by child
+
+Sorts children by the value of a nested child field. This is the one you'll use most often.
+
+```typescript
+// Sort players by their 'score' field
+db.ref('players').orderByChild('score')
+```
+
+If a child doesn't have the specified field, it sorts as if the value is `null` (which comes first in Lark's sort order).
+
+### Order by priority
+
+Sorts children by their priority metadata. Priority is a legacy ordering mechanism — in most cases, `orderByChild` is a better choice. But it's available when you need it.
+
+```typescript
+db.ref('players').orderByPriority()
+```
+
+## Value type precedence
+
+When sorting, Lark follows a strict type ordering. If your data contains mixed types, they sort in this order:
+
+| Order | Type | Sorting within type |
+|-------|------|-------------------|
+| 1 | `null` | All nulls are equal |
+| 2 | `false` | — |
+| 3 | `true` | — |
+| 4 | Numbers | Ascending numeric order |
+| 5 | Strings | Lexicographic (Unicode) order |
+| 6 | Objects | Sorted by key |
+
+Numbers always come before strings. So the value `25` sorts before the value `"apple"`, regardless of what they'd look like alphabetically.
+
+<Note>
+This type ordering matters most when using `orderByValue` or `orderByChild` on data where different children might have different types for the same field. In practice, keep your types consistent and you won't need to think about this.
+</Note>
+
+## Limits
+
+Limits let you cap how many results are returned.
+
+### limitToFirst
+
+Returns the first N results in the current sort order.
+
+```typescript
+// Get the 5 players with the lowest scores
+db.ref('players').orderByChild('score').limitToFirst(5)
+```
+
+### limitToLast
+
+Returns the last N results in the current sort order.
+
+```typescript
+// Get the 5 players with the highest scores
+db.ref('players').orderByChild('score').limitToLast(5)
+```
+
+<Tip>
+`limitToLast` is your friend for "top N" queries. Since `orderByChild('score')` sorts ascending, `limitToLast(10)` gives you the top 10 highest scores.
+</Tip>
+
+## Ranges
+
+Ranges let you filter results to a specific window within the sort order.
+
+### startAt / endAt (inclusive)
+
+`startAt` and `endAt` define inclusive bounds. Only results that fall within the range are returned.
+
+```typescript
+// Players with scores between 100 and 500 (inclusive)
+db.ref('players').orderByChild('score').startAt(100).endAt(500)
+```
+
+### startAfter / endBefore (exclusive)
+
+`startAfter` and `endBefore` are the exclusive versions — they exclude the boundary value itself.
+
+```typescript
+// Players with scores strictly greater than 100
+db.ref('players').orderByChild('score').startAfter(100)
+```
+
+### equalTo
+
+`equalTo` matches exactly one value. It's a shorthand for setting `startAt` and `endAt` to the same value.
+
+```typescript
+// Find all players with a score of exactly 250
+db.ref('players').orderByChild('score').equalTo(250)
+```
+
+## Combining ordering, limits, and ranges
+
+You can chain one ordering mode with any combination of limits and ranges to build precise queries.
+
+Here's a practical example — a leaderboard showing the top 10 scores:
+
+```typescript
+// Subscribe to the top 10 players by score
+db.ref('players')
+  .orderByChild('score')
+  .limitToLast(10)
+  .on('value', (snapshot) => {
+    const leaderboard: Array<{ name: string; score: number }> = [];
+
+    snapshot.forEach((childSnapshot) => {
+      leaderboard.push(childSnapshot.val());
+    });
+
+    // Results are in ascending order, reverse for top-down display
+    leaderboard.reverse();
+    console.log('Leaderboard:', leaderboard);
+  });
+```
+
+Or paginating through chat messages:
+
+```typescript
+// Get the 20 most recent messages
+db.ref('messages')
+  .orderByKey()
+  .limitToLast(20)
+  .once('value');
+
+// Get the next 20 messages before a known key
+db.ref('messages')
+  .orderByKey()
+  .endBefore(oldestMessageKey)
+  .limitToLast(20)
+  .once('value');
+```
+
+<Warning>
+You can only use one `orderBy` method per query. You cannot, for example, sort by `score` and then sub-sort by `name`. If you need compound sorting, structure your data so a single field captures the sort order you need (e.g., a composite key like `"0250_alice"`).
+</Warning>

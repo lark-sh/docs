@@ -1,0 +1,78 @@
+---
+title: "LarkError"
+description: "API reference for the LarkError class"
+---
+
+`LarkError` extends the native `Error` class with a `code` property for programmatic error handling. All errors thrown or surfaced by the Lark SDK are instances of `LarkError`.
+
+```typescript
+import { LarkError } from '@lark-sh/client';
+
+try {
+  await db.ref('secret/data').get();
+} catch (error) {
+  if (error instanceof LarkError) {
+    console.error(`[${error.code}] ${error.message}`);
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Description |
+|---|---|---|
+| `code` | `string` | A machine-readable error code identifying the type of error. |
+| `message` | `string` | A human-readable description of the error. |
+
+## Error Codes
+
+| Code | Description |
+|---|---|
+| `permission_denied` | The client does not have permission to perform the requested operation. Check your security rules. |
+| `invalid_data` | The data provided is invalid or cannot be stored (e.g., contains unsupported types or exceeds size limits). |
+| `not_found` | The requested resource does not exist. |
+| `invalid_path` | The specified path is malformed or contains illegal characters. |
+| `timeout` | The operation timed out before completing. This can occur during reads, writes, or connection attempts. |
+| `not_connected` | The operation requires an active connection, but the client is not connected to the server. |
+| `condition_failed` | A transaction or conditional write failed because the underlying data was modified by another client. |
+| `max_retries_exceeded` | A transaction exceeded the maximum number of retry attempts without successfully committing. |
+| `write_tainted` | A pending write was invalidated because it conflicts with a server-side change. |
+| `view_recovering` | The local view of the data is temporarily inconsistent and is being recovered. Retry the operation shortly. |
+| `auth_required` | The operation requires authentication, but the client is not signed in. Call `signIn()` first. |
+
+## Handling Errors
+
+### With try/catch
+
+```typescript
+try {
+  await db.ref('protected/path').set({ key: 'value' });
+} catch (error) {
+  if (error instanceof LarkError) {
+    switch (error.code) {
+      case 'permission_denied':
+        console.error('Access denied. Please sign in.');
+        break;
+      case 'not_connected':
+        console.error('No connection. Retrying when online.');
+        break;
+      default:
+        console.error(`Unexpected error: ${error.code}`);
+    }
+  }
+}
+```
+
+### With the error event
+
+Connection-level errors are emitted via the `onError` event on the `LarkDatabase` instance.
+
+```typescript
+db.onError((error: LarkError) => {
+  console.error(`Connection error [${error.code}]: ${error.message}`);
+});
+```
+
+<Note>
+Transaction-related codes (`condition_failed`, `max_retries_exceeded`, `write_tainted`) indicate that the transaction could not commit. In most cases the SDK retries automatically, but if `max_retries_exceeded` is thrown, you may need to retry with different logic.
+</Note>

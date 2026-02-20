@@ -1,0 +1,284 @@
+---
+title: "LarkDatabase"
+description: "API reference for the LarkDatabase class"
+---
+
+The `LarkDatabase` class is the main entry point for interacting with a Lark database. It manages the connection lifecycle, authentication, and provides access to database references.
+
+## Constructor
+
+```typescript
+new LarkDatabase(projectAndDatabase: string, options?: LarkDatabaseOptions)
+```
+
+Creates a new `LarkDatabase` instance.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `projectAndDatabase` | `string` | A combined identifier in the format `'projectId/databaseId'`. |
+| `options` | `LarkDatabaseOptions` | Optional configuration object. |
+
+```typescript
+import { LarkDatabase } from '@lark-sh/client';
+
+const db = new LarkDatabase('my-project/my-database');
+```
+
+## Properties
+
+| Property | Type | Description |
+|---|---|---|
+| `connected` | `boolean` | Whether the client is currently connected to the server. |
+| `state` | `ConnectionState` | The current connection state. One of `'disconnected'`, `'connecting'`, `'connected'`, `'joined'`, `'authenticated'`, or `'reconnecting'`. |
+| `auth` | `AuthInfo \| null` | The current authentication info, or `null` if not signed in. |
+| `reconnecting` | `boolean` | Whether the client is currently attempting to reconnect. |
+| `transportType` | `'websocket' \| 'webtransport' \| null` | The active transport protocol, or `null` if not connected. |
+| `serverTimeOffset` | `number` | Estimated offset in milliseconds between the client clock and the server clock. |
+| `volatilePaths` | `string[]` | List of paths configured for high-frequency volatile updates. |
+
+### AuthInfo
+
+| Property | Type | Description |
+|---|---|---|
+| `uid` | `string` | The authenticated user's unique identifier. |
+| `provider` | `string` | The authentication provider used. |
+| `token` | `string` | The current authentication token. |
+
+## Methods
+
+### connect
+
+```typescript
+connect(options?: ConnectOptions): Promise<void>
+```
+
+Opens a connection to the Lark server. Resolves when the connection is established.
+
+```typescript
+const db = new LarkDatabase('my-project/my-database');
+await db.connect();
+```
+
+### disconnect
+
+```typescript
+disconnect(): Promise<void>
+```
+
+Closes the connection to the server. Resolves when the connection is fully closed.
+
+```typescript
+await db.disconnect();
+```
+
+### ref
+
+```typescript
+ref(path?: string): DatabaseReference
+```
+
+Returns a `DatabaseReference` pointing to the specified path in the database. If no path is provided, returns a reference to the root.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `path` | `string` | Optional path relative to the database root. |
+
+```typescript
+const usersRef = db.ref('users');
+const rootRef = db.ref();
+const nestedRef = db.ref('users/alice/profile');
+```
+
+### signIn
+
+```typescript
+signIn(token: string): Promise<void>
+```
+
+Authenticates the client with the given token. Resolves when authentication succeeds.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `token` | `string` | An authentication token. |
+
+```typescript
+await db.signIn('eyJhbGciOi...');
+```
+
+### signOut
+
+```typescript
+signOut(): Promise<void>
+```
+
+Signs out the current user and reverts to unauthenticated access.
+
+```typescript
+await db.signOut();
+```
+
+### transaction
+
+```typescript
+transaction(ops: TransactionOperation[]): Promise<TransactionResult>
+```
+
+Executes a batch of operations atomically. All operations succeed or all fail together.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `ops` | `TransactionOperation[]` | An array of operations to execute atomically. |
+
+```typescript
+const result = await db.transaction([
+  { type: 'set', path: 'counters/a', value: 1 },
+  { type: 'set', path: 'counters/b', value: 2 },
+]);
+```
+
+### goOffline
+
+```typescript
+goOffline(): void
+```
+
+Manually disconnects the client and disables automatic reconnection. Pending writes are preserved.
+
+```typescript
+db.goOffline();
+```
+
+### goOnline
+
+```typescript
+goOnline(): void
+```
+
+Re-enables the connection after a `goOffline()` call. The client will attempt to reconnect and flush any pending writes.
+
+```typescript
+db.goOnline();
+```
+
+### hasPendingWrites
+
+```typescript
+hasPendingWrites(): boolean
+```
+
+Returns `true` if there are writes that have not yet been acknowledged by the server.
+
+```typescript
+if (db.hasPendingWrites()) {
+  console.log('Waiting for writes to sync...');
+}
+```
+
+### getPendingWriteCount
+
+```typescript
+getPendingWriteCount(): number
+```
+
+Returns the number of write operations that have not yet been acknowledged by the server.
+
+```typescript
+console.log(`${db.getPendingWriteCount()} writes pending`);
+```
+
+### clearPendingWrites
+
+```typescript
+clearPendingWrites(): void
+```
+
+Discards all pending writes that have not been sent to the server. Use with caution — discarded writes cannot be recovered.
+
+<Note>
+This permanently drops any unsent writes. Only use this if you intentionally want to discard local changes.
+</Note>
+
+```typescript
+db.clearPendingWrites();
+```
+
+## Event Methods
+
+All event methods return an unsubscribe function. Call it to stop listening.
+
+### onConnect
+
+```typescript
+onConnect(callback: () => void): () => void
+```
+
+Registers a listener that fires when the client establishes a connection.
+
+```typescript
+const unsubscribe = db.onConnect(() => {
+  console.log('Connected to Lark');
+});
+
+// Later, stop listening
+unsubscribe();
+```
+
+### onDisconnect
+
+```typescript
+onDisconnect(callback: () => void): () => void
+```
+
+Registers a listener that fires when the client loses its connection.
+
+```typescript
+const unsubscribe = db.onDisconnect(() => {
+  console.log('Disconnected from Lark');
+});
+```
+
+### onReconnecting
+
+```typescript
+onReconnecting(callback: () => void): () => void
+```
+
+Registers a listener that fires when the client begins a reconnection attempt.
+
+```typescript
+const unsubscribe = db.onReconnecting(() => {
+  console.log('Attempting to reconnect...');
+});
+```
+
+### onError
+
+```typescript
+onError(callback: (error: LarkError) => void): () => void
+```
+
+Registers a listener that fires when a connection-level error occurs.
+
+```typescript
+const unsubscribe = db.onError((error) => {
+  console.error(`Lark error [${error.code}]: ${error.message}`);
+});
+```
+
+### onAuthStateChanged
+
+```typescript
+onAuthStateChanged(callback: (auth: AuthInfo | null) => void): () => void
+```
+
+Registers a listener that fires when the authentication state changes — on sign-in, sign-out, or token refresh.
+
+```typescript
+const unsubscribe = db.onAuthStateChanged((auth) => {
+  if (auth) {
+    console.log(`Signed in as ${auth.uid}`);
+  } else {
+    console.log('Signed out');
+  }
+});
+```

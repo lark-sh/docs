@@ -1,0 +1,50 @@
+---
+title: "Setup"
+description: "Configure your Firebase app to connect to Lark"
+---
+
+The only code change you need is the connection URL. Instead of pointing at Firebase, you point at Lark.
+
+- **Firebase default:** `https://your-project.firebaseio.com`
+- **Lark:** `https://your-lark-project-id.larkdb.net`
+
+## Firebase JS SDK v8
+
+```javascript
+import firebase from 'firebase/app';
+import 'firebase/database';
+
+firebase.initializeApp({
+  databaseURL: 'https://your-lark-project-id.larkdb.net'
+});
+
+const db = firebase.database();
+```
+
+## Firebase JS SDK v9 (modular)
+
+```javascript
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, set } from 'firebase/database';
+
+const app = initializeApp({
+  databaseURL: 'https://your-lark-project-id.larkdb.net'
+});
+
+const db = getDatabase(app);
+```
+
+That's it. The rest of your code stays exactly the same.
+
+## Project settings
+
+Before connecting, make sure your Lark project is configured correctly:
+
+1. **Allow Legacy Firebase** must be enabled in your Lark project settings. This turns on the Firebase wire protocol.
+2. If your Firebase app used path-based sharding (multiple "databases" via the first path segment), enable **Use First Path as Database** in settings.
+
+<Tip>You can test Lark with a percentage of your traffic first. Send 5% of connections to Lark and keep 95% on Firebase. If anything goes wrong, switch back — one URL change.</Tip>
+
+## Other platforms
+
+The same approach works for other Firebase SDKs (iOS, Android, Unity, etc.). Find the `databaseURL` configuration in your platform's Firebase setup and replace it with your Lark URL. The wire protocol is identical across all platforms.

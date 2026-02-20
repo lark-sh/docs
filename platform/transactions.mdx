@@ -1,0 +1,183 @@
+---
+title: "Transactions"
+description: "Atomic read-modify-write operations and multi-path updates"
+---
+
+When multiple clients write to the same data at the same time, you can get race conditions. Transactions give you atomic read-modify-write operations so that concurrent updates don't step on each other.
+
+## Why transactions
+
+Imagine two players both try to increment a score at the same time. Without transactions:
+
+1. Client A reads the score: `10`
+2. Client B reads the score: `10`
+3. Client A writes `11`
+4. Client B writes `11`
+
+The score should be `12`, but it's `11`. One increment was lost. Transactions prevent this.
+
+## Callback-style transactions
+
+The most common transaction pattern. You provide a function that receives the current value and returns the new value. Lark handles the rest.
+
+```typescript
+const scoreRef = db.ref('players/alice/score');
+
+await scoreRef.transaction((currentValue) => {
+  // currentValue is the current server value (or null if nothing exists)
+  return (currentValue || 0) + 1;
+});
+```
+
+Here's what happens under the hood:
+
+1. The SDK reads the current value at the path.
+2. Your function runs, receiving the current value and returning the new value.
+3. The SDK sends the new value to the server.
+4. If another client changed the value between your read and write, the server rejects the transaction.
+5. Your function is called again with the updated value.
+6. This repeats until the write succeeds or the retry limit is reached (25 attempts).
+
+<Note>
+Your transaction function may be called multiple times. Don't put side effects in it — no network requests, no logging, no UI updates. It should be a pure function that computes a new value from the current value.
+</Note>
+
+### Transaction results
+
+The `transaction` call returns a result object with details about the outcome:
+
+```typescript
+const result = await scoreRef.transaction((currentValue) => {
+  return (currentValue || 0) + 1;
+});
+
+console.log(result.committed); // true if the transaction succeeded
+console.log(result.snapshot.val()); // the final value after the transaction
+```
+
+If your function returns `undefined`, the transaction is aborted — no write happens, and `committed` will be `false`.
+
+```typescript
+await scoreRef.transaction((currentValue) => {
+  if (currentValue > 100) {
+    // Abort — don't modify the value
+    return undefined;
+  }
+  return currentValue + 1;
+});
+```
+
+## Optimistic behavior
+
+Transactions are optimistic by default. The client applies the result of your function to local state immediately, so your UI updates right away. If the server rejects the transaction and your function retries, the local state is updated again with the new result.
+
+This means your subscriptions fire immediately with the optimistic value, then potentially fire again if the server computes a different outcome. In practice, retries are rare and the optimistic value is almost always correct.
+
+## Multi-path transactions
+
+Sometimes you need to update multiple paths atomically. Either all the changes happen, or none of them do.
+
+### Object syntax
+
+The simplest form. Pass an object where the keys are paths and the values are what to write. Use `null` to delete a path.
+
+```typescript
+await db.ref().transaction({
+  '/players/alice/coins': 50,
+  '/players/bob/coins': 150,
+  '/trades/latest': { from: 'alice', to: 'bob', amount: 50 }
+});
+```
+
+All three writes happen atomically. If any one fails, none of them are applied.
+
+### Array syntax
+
+For more control, use the array syntax with explicit operations. This unlocks conditional transactions.
+
+```typescript
+await db.ref().transaction([
+  { op: 'set', path: '/players/alice/coins', value: 50 },
+  { op: 'set', path: '/players/bob/coins', value: 150 },
+  { op: 'set', path: '/trades/latest', value: { from: 'alice', to: 'bob', amount: 50 } }
+]);
+```
+
+## Conditions (compare-and-swap)
+
+In array-syntax transactions, you can add `condition` operations that check the current value before proceeding. If any condition fails, the entire transaction is rejected.
+
+```typescript
+await db.ref().transaction([
+  // Only proceed if Alice has exactly 100 coins
+  { op: 'condition', path: '/players/alice/coins', value: 100 },
+  // Transfer 50 coins
+  { op: 'set', path: '/players/alice/coins', value: 50 },
+  { op: 'set', path: '/players/bob/coins', value: 150 }
+]);
+```
+
+For primitive values (strings, numbers, booleans), the condition compares the value directly. For complex objects, Lark computes a SHA-256 hash of the current value and compares that. This lets you condition on "this object hasn't changed" without specifying every field.
+
+```typescript
+await db.ref().transaction([
+  // Condition on a complex object — uses SHA-256 hash comparison
+  { op: 'condition', path: '/game/state', value: currentStateHash },
+  { op: 'set', path: '/game/state', value: newState }
+]);
+```
+
+<Warning>
+When a condition fails, the entire transaction is rejected — none of the operations are applied. Your client will need to re-read the current state and decide whether to retry.
+</Warning>
+
+## Practical examples
+
+### Incrementing a counter
+
+```typescript
+const likesRef = db.ref('posts/post123/likes');
+
+await likesRef.transaction((current) => {
+  return (current || 0) + 1;
+});
+```
+
+### Transferring currency between players
+
+```typescript
+const aliceCoinsRef = db.ref('players/alice/coins');
+const bobCoinsRef = db.ref('players/bob/coins');
+const transferAmount = 50;
+
+// Read current values first
+const aliceSnapshot = await aliceCoinsRef.once('value');
+const bobSnapshot = await bobCoinsRef.once('value');
+const aliceCoins = aliceSnapshot.val();
+const bobCoins = bobSnapshot.val();
+
+// Use a conditional multi-path transaction
+await db.ref().transaction([
+  // Ensure neither balance changed since we read it
+  { op: 'condition', path: '/players/alice/coins', value: aliceCoins },
+  { op: 'condition', path: '/players/bob/coins', value: bobCoins },
+  // Apply the transfer
+  { op: 'set', path: '/players/alice/coins', value: aliceCoins - transferAmount },
+  { op: 'set', path: '/players/bob/coins', value: bobCoins + transferAmount }
+]);
+```
+
+### Conditional update (only if value matches)
+
+```typescript
+// Only claim a reward if it hasn't been claimed yet
+await db.ref().transaction([
+  { op: 'condition', path: '/rewards/reward1/claimed', value: false },
+  { op: 'set', path: '/rewards/reward1/claimed', value: true },
+  { op: 'set', path: '/rewards/reward1/claimedBy', value: 'alice' }
+]);
+```
+
+<Tip>
+Use callback-style transactions for simple read-modify-write operations on a single path (like counters). Use multi-path transactions with conditions when you need to update several paths atomically or enforce preconditions.
+</Tip>

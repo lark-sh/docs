@@ -1,0 +1,160 @@
+---
+title: "Authentication"
+description: "How identity and access control work in Lark"
+---
+
+Authentication tells Lark who is making a request. Once a client is authenticated, their identity is available in [security rules](/platform/security-rules) as the `auth` variable. This is how you control who can read and write what.
+
+## Anonymous access
+
+The simplest way to connect. No credentials, no tokens. The client connects and starts reading and writing immediately.
+
+```typescript
+const db = new LarkDatabase('my-project/my-database');
+// Connected — auth is null
+```
+
+In security rules, `auth` will be `null` for anonymous clients. You can allow anonymous access where appropriate:
+
+```json
+{
+  "rules": {
+    "public": {
+      ".read": true,
+      ".write": true
+    },
+    "private": {
+      ".read": "auth !== null",
+      ".write": "auth !== null"
+    }
+  }
+}
+```
+
+Anonymous access is useful for public data, read-only content, or getting started quickly during development. For anything user-specific or sensitive, you'll want authenticated connections.
+
+<Warning>
+Anonymous access means anyone can connect. If your security rules grant write access to anonymous users, anyone can modify that data. Use anonymous access intentionally, not as a default.
+</Warning>
+
+## Lark tokens
+
+Lark tokens are JWTs (JSON Web Tokens) signed with your project's secret key using HS256. You generate them on your backend server and pass them to the client.
+
+### Generating a token
+
+On your server, create a JWT with at least a `uid` field:
+
+```typescript
+import jwt from 'jsonwebtoken';
+
+const SECRET_KEY = process.env.LARK_SECRET_KEY;
+
+function createLarkToken(uid: string, claims?: Record<string, any>) {
+  const payload = {
+    uid,
+    ...claims
+  };
+
+  return jwt.sign(payload, SECRET_KEY, {
+    algorithm: 'HS256',
+    expiresIn: '24h'
+  });
+}
+
+// Generate a token for Alice with a role claim
+const token = createLarkToken('alice', { role: 'admin', teamId: 'team-42' });
+```
+
+### Authenticating on the client
+
+Pass the token when connecting or call `signIn` after connecting:
+
+```typescript
+// Option 1: Authenticate on connect
+const db = new LarkDatabase('my-project/my-database', {
+  token: token
+});
+
+// Option 2: Authenticate after connecting
+const db = new LarkDatabase('my-project/my-database');
+await db.signIn(token);
+```
+
+Once authenticated, the `auth` object in security rules contains the token's payload:
+
+- `auth.uid` — The user's unique ID from the `uid` field in the token.
+- `auth.token` — The full token payload, including any custom claims.
+
+## Custom claims
+
+Include any extra data in your token to make it available in security rules. Common use cases: roles, permissions, team membership, subscription tier.
+
+```typescript
+// Server-side: generate a token with custom claims
+const token = createLarkToken('alice', {
+  role: 'moderator',
+  teamId: 'team-42',
+  plan: 'pro'
+});
+```
+
+Then use those claims in your security rules:
+
+```json
+{
+  "rules": {
+    "teams": {
+      "$teamId": {
+        ".read": "auth.token.teamId === $teamId",
+        ".write": "auth.token.role === 'admin' && auth.token.teamId === $teamId"
+      }
+    },
+    "moderation": {
+      ".write": "auth.token.role === 'moderator' || auth.token.role === 'admin'"
+    }
+  }
+}
+```
+
+<Tip>
+Keep tokens small. Include the claims you need for security rules, but don't stuff entire user profiles into them. The token is sent with every connection, so smaller is better.
+</Tip>
+
+## Token flow
+
+Here's the full authentication flow:
+
+1. The user logs in to your app through whatever auth system you use (email/password, OAuth, SSO).
+2. Your backend server verifies the user's identity.
+3. Your backend generates a signed Lark JWT containing the user's `uid` and any custom claims.
+4. Your backend sends the token to the client.
+5. The client passes the token to Lark on connect (or via `signIn`).
+6. Lark validates the JWT signature against your project's secret key.
+7. If valid, the `auth` object is populated for all security rule evaluations on this connection.
+
+```
+User logs in → Your backend → Generates JWT → Client → Lark validates → auth is set
+```
+
+<Note>
+Lark doesn't manage user accounts or passwords. It trusts whatever identity your backend puts in the JWT. This gives you full flexibility — use any auth provider, any user store, any login flow you want.
+</Note>
+
+## Secret key management
+
+Your project's secret key is available in the [Lark dashboard](https://admin.larkdb.net) under **Project Settings > Secret Key**.
+
+A few important rules:
+
+- **Keep it on your server.** Never include the secret key in client-side code, mobile apps, or anywhere a user could extract it.
+- **Use environment variables.** Store it as `LARK_SECRET_KEY` or similar, not hardcoded in source files.
+- **Regenerate if compromised.** You can regenerate your secret key from the dashboard at any time. This immediately invalidates all existing tokens — connected clients will need to re-authenticate with tokens signed by the new key.
+
+<Warning>
+If your secret key leaks, anyone can generate valid tokens with any `uid` and any claims. They would have full access to your database as any user. Regenerate the key immediately if you suspect it's been exposed.
+</Warning>
+
+## Firebase Auth compatibility
+
+If you're using Lark with Firebase SDKs, Lark also accepts Firebase Auth tokens. Your existing Firebase authentication flow works without changes. See the [Firebase Auth guide](/firebase/auth) for details on configuring this.

@@ -1,0 +1,122 @@
+---
+title: "Quickstart"
+description: "Connect to Lark and start reading and writing data in minutes"
+---
+
+# Quickstart
+
+This guide takes you from zero to a working Lark connection in under five minutes. You'll connect to a database, write data, read it back, and subscribe to real-time updates.
+
+## 1. Install the SDK
+
+```bash
+npm install @lark-sh/client
+```
+
+## 2. Connect to your database
+
+```typescript
+import { LarkDatabase } from "@lark-sh/client";
+
+// Create a database instance with your project and database IDs
+const db = new LarkDatabase("my-project/my-database");
+
+// Connect with anonymous authentication
+await db.connect({ anonymous: true });
+
+console.log("Connected!");
+```
+
+<Tip>
+You can find your project and database IDs in the Lark dashboard. The format is always `projectId/databaseId`.
+</Tip>
+
+## 3. Write data
+
+```typescript
+// Set data at a specific path
+await db.ref("users/alice").set({
+  name: "Alice",
+  score: 42,
+  online: true,
+});
+```
+
+## 4. Read data once
+
+```typescript
+// Read the data you just wrote
+const snapshot = await db.ref("users/alice").once("value");
+
+console.log(snapshot.val());
+// { name: "Alice", score: 42, online: true }
+```
+
+## 5. Subscribe to real-time updates
+
+```typescript
+// Listen for changes — on() returns an unsubscribe function
+const unsubscribe = db.ref("users/alice/score").on("value", (snapshot) => {
+  console.log("Score changed:", snapshot.val());
+});
+
+// Update the score from somewhere else — your listener fires automatically
+await db.ref("users/alice/score").set(99);
+// Console: "Score changed: 99"
+```
+
+## 6. Clean up
+
+```typescript
+// Stop listening
+unsubscribe();
+
+// Disconnect when you're done
+db.disconnect();
+```
+
+## Full working example
+
+Here's everything in one file:
+
+```typescript
+import { LarkDatabase } from "@lark-sh/client";
+
+async function main() {
+  // Connect
+  const db = new LarkDatabase("my-project/my-database");
+  await db.connect({ anonymous: true });
+
+  // Write
+  await db.ref("users/alice").set({
+    name: "Alice",
+    score: 42,
+    online: true,
+  });
+
+  // Read once
+  const snapshot = await db.ref("users/alice").once("value");
+  console.log("Read:", snapshot.val());
+
+  // Subscribe to real-time updates
+  const unsubscribe = db.ref("users/alice/score").on("value", (snap) => {
+    console.log("Score is now:", snap.val());
+  });
+
+  // Make a change — the subscription fires
+  await db.ref("users/alice/score").set(100);
+
+  // Clean up
+  unsubscribe();
+  db.disconnect();
+}
+
+main();
+```
+
+## Next steps
+
+- [Connecting](/lark-sdk/connecting) — connection options, transport selection, and lifecycle events
+- [Writing data](/lark-sdk/writing) — set, update, remove, push, and multi-path writes
+- [Subscriptions](/lark-sdk/subscriptions) — listen for real-time changes with different event types
+- [Authentication](/lark-sdk/auth) — move beyond anonymous auth with tokens

@@ -1,0 +1,65 @@
+---
+title: "Migrating from Firebase"
+description: "Step-by-step guide to moving your Firebase Realtime Database to Lark"
+---
+
+Moving from Firebase Realtime Database to Lark is straightforward. Your code, security rules, and data model all carry over.
+
+<Steps>
+  <Step title="Create a Lark project">
+    Create a project in the [Lark dashboard](https://dashboard.larkdb.com). Note your project ID — you'll need it for the connection URL.
+  </Step>
+  <Step title="Enable Firebase compatibility">
+    In project settings, toggle **Allow Legacy Firebase**. This turns on the Firebase wire protocol so your existing SDKs can connect.
+
+    If your app uses path-based database routing (multiple "databases" via the first path segment), also enable **Use First Path as Database**.
+  </Step>
+  <Step title="Configure Firebase Auth (if applicable)">
+    If you use Firebase Auth, enter your Firebase project ID in the **Firebase Auth Project ID** field. This lets Lark validate your users' tokens. See [Firebase Auth with Lark](/firebase/auth) for details.
+  </Step>
+  <Step title="Migrate security rules">
+    Copy your Firebase RTDB security rules into Lark's security rules editor. The syntax is identical — paste them in and click **Save Rules**.
+
+    You can find your current rules in the Firebase console under Realtime Database > Rules.
+  </Step>
+  <Step title="Export your data">
+    In the Firebase console, export your database as JSON. Or use the Firebase CLI:
+
+    ```bash
+    firebase database:get / > backup.json
+    ```
+
+    For large databases, consider exporting individual paths to keep file sizes manageable.
+  </Step>
+  <Step title="Import your data">
+    In the Lark dashboard, open your database and use **Import** to upload the JSON file. This writes the data to your Lark database in the same structure it had in Firebase.
+  </Step>
+  <Step title="Update your connection URL">
+    Change your `databaseURL` from:
+
+    ```
+    https://your-project.firebaseio.com
+    ```
+
+    to:
+
+    ```
+    https://your-lark-project-id.larkdb.net
+    ```
+
+    This is the only code change required.
+  </Step>
+  <Step title="Test">
+    Run your app and verify that reads, writes, and subscriptions work as expected. Start with a staging environment or a small percentage of production traffic.
+  </Step>
+</Steps>
+
+<Tip>You don't have to migrate all at once. Start by pointing a staging environment at Lark, run your test suite, then gradually shift production traffic.</Tip>
+
+## Common gotchas
+
+A few things to double-check before you go live:
+
+- **Ephemeral mode** — Make sure ephemeral mode is OFF if you want data to persist. Ephemeral mode is a Lark feature that discards data when all subscribers disconnect. Great for presence systems, not great for your users table.
+- **Auto-create** — Make sure auto-create is ON if your app expects databases to exist on first connect. Firebase creates databases implicitly; Lark can too, but the setting needs to be enabled.
+- **Security rules** — Test your rules in Lark's rules editor before going live. The syntax is the same, but it's worth verifying that everything was copied correctly.

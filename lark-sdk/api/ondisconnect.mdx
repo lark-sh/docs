@@ -1,0 +1,136 @@
+---
+title: "OnDisconnect"
+description: "API reference for the OnDisconnect class"
+---
+
+The `OnDisconnect` class lets you register write operations that the server will execute if the client disconnects unexpectedly. This is commonly used for presence systems, cleanup tasks, and ensuring data consistency when a user goes offline.
+
+Obtain an `OnDisconnect` instance via [`DatabaseReference.onDisconnect()`](/lark-sdk/api/database-reference#ondisconnect).
+
+```typescript
+const presenceRef = db.ref('status/alice');
+
+presenceRef.onDisconnect().set('offline');
+await presenceRef.set('online');
+```
+
+<Note>
+All `OnDisconnect` methods return a `Promise` that resolves once the server has acknowledged and registered the operation. The operation itself executes later, only if the client disconnects.
+</Note>
+
+## Methods
+
+### set
+
+```typescript
+set(value: any): Promise<void>
+```
+
+Registers a `set` operation to run on disconnect. The specified value will replace any data at this location when the client disconnects.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `value` | `any` | The value to write on disconnect. Pass `null` to delete the data. |
+
+```typescript
+const ref = db.ref('rooms/room1/members/alice');
+
+await ref.onDisconnect().set(null);
+await ref.set({ name: 'Alice', joinedAt: ServerValue.TIMESTAMP });
+```
+
+### update
+
+```typescript
+update(values: object): Promise<void>
+```
+
+Registers an `update` operation to run on disconnect. Only the specified children are modified; other children at this location are left intact.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `values` | `object` | An object containing the children to update on disconnect. |
+
+```typescript
+await db.ref('users/alice').onDisconnect().update({
+  status: 'offline',
+  lastSeen: ServerValue.TIMESTAMP,
+});
+```
+
+### remove
+
+```typescript
+remove(): Promise<void>
+```
+
+Registers a `remove` operation to run on disconnect. All data at this location (and its children) will be deleted when the client disconnects.
+
+```typescript
+const memberRef = db.ref('rooms/room1/members/alice');
+
+await memberRef.onDisconnect().remove();
+await memberRef.set({ name: 'Alice' });
+```
+
+### setWithPriority
+
+```typescript
+setWithPriority(value: any, priority: string | number | null): Promise<void>
+```
+
+Registers a `set` operation with a priority to run on disconnect.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `value` | `any` | The value to write on disconnect. |
+| `priority` | `string \| number \| null` | The priority to assign. |
+
+```typescript
+await db.ref('status/alice').onDisconnect().setWithPriority('offline', 0);
+```
+
+### cancel
+
+```typescript
+cancel(): Promise<void>
+```
+
+Cancels all previously registered `OnDisconnect` operations at this location. The server will no longer perform any disconnect writes for this reference.
+
+```typescript
+const ref = db.ref('status/alice');
+
+// Register a disconnect handler
+await ref.onDisconnect().set('offline');
+
+// Later, cancel it
+await ref.onDisconnect().cancel();
+```
+
+## Usage Pattern
+
+A typical presence system combines `onDisconnect` with a normal write to track whether a user is online.
+
+```typescript
+async function setupPresence(db: LarkDatabase, userId: string): Promise<void> {
+  const statusRef = db.ref(`status/${userId}`);
+  const connectedRef = db.ref('.info/connected');
+
+  connectedRef.on('value', async (snapshot) => {
+    if (!snapshot.val()) {
+      return;
+    }
+
+    await statusRef.onDisconnect().set({
+      state: 'offline',
+      lastSeen: ServerValue.TIMESTAMP,
+    });
+
+    await statusRef.set({
+      state: 'online',
+      lastSeen: ServerValue.TIMESTAMP,
+    });
+  });
+}
+```

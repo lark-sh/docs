@@ -1,0 +1,75 @@
+---
+title: "Reading data"
+description: "Read data from your Lark database"
+---
+
+# Reading data
+
+Sometimes you just need to fetch data once without subscribing to ongoing changes. The Lark SDK provides two equivalent methods for this.
+
+## `once(eventType)`
+
+Reads data at a reference and returns a promise that resolves with a `DataSnapshot`:
+
+```typescript
+import { LarkDatabase } from "@lark-sh/client";
+
+const db = new LarkDatabase("my-project/my-database");
+await db.connect({ anonymous: true });
+
+const snapshot = await db.ref("users/alice").once("value");
+
+console.log(snapshot.val());
+// { name: "Alice", score: 42, online: true }
+```
+
+## `get()`
+
+An alias for `once('value')`. Same behavior, shorter syntax:
+
+```typescript
+const snapshot = await db.ref("users/alice").get();
+
+console.log(snapshot.val());
+// { name: "Alice", score: 42, online: true }
+```
+
+## Working with snapshots
+
+Both methods return a `DataSnapshot`. Here are the key properties and methods:
+
+### `snapshot.val()`
+
+Returns the data as a JavaScript value (object, array, string, number, boolean, or `null`):
+
+```typescript
+const snapshot = await db.ref("users/alice").get();
+const user = snapshot.val(); // { name: "Alice", score: 42 }
+```
+
+### `snapshot.exists()`
+
+Returns `true` if data exists at this location, `false` if it's `null`:
+
+```typescript
+const snapshot = await db.ref("users/nonexistent").get();
+
+if (snapshot.exists()) {
+  console.log(snapshot.val());
+} else {
+  console.log("No data here");
+}
+```
+
+### `snapshot.key`
+
+The key (last path segment) of the location this snapshot represents:
+
+```typescript
+const snapshot = await db.ref("users/alice").get();
+console.log(snapshot.key); // "alice"
+```
+
+<Tip>
+If you need data that stays up to date as it changes, use [real-time subscriptions](/lark-sdk/subscriptions) instead. `once()` and `get()` fetch a single point-in-time snapshot and don't update afterward.
+</Tip>

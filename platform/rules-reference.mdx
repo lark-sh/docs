@@ -1,0 +1,151 @@
+---
+title: "Rules reference"
+description: "Complete reference for security rules expressions"
+---
+
+This is the full reference for everything you can use inside Lark security rule expressions. If you're new to rules, start with the [security rules overview](/platform/security-rules) first.
+
+## Variables
+
+These variables are available in every rule expression.
+
+| Variable | Type | Description |
+| --- | --- | --- |
+| `auth` | object \| null | The authenticated user. `null` if the client is unauthenticated. |
+| `auth.uid` | string | The unique ID of the authenticated user. |
+| `auth.provider` | string | The authentication provider (e.g., `"google"`, `"anonymous"`). |
+| `auth.token` | object | Custom claims attached to the user's auth token. |
+| `data` | snapshot | A snapshot of the **current** data at this path, before the write. |
+| `newData` | snapshot | A snapshot of the data that **would exist** after the write. Only available in `.write` and `.validate` rules. |
+| `root` | snapshot | A snapshot of the root of the entire database. Use this to read data at other paths. |
+| `now` | number | The current server timestamp in milliseconds since epoch. |
+| `$wildcards` | string | Path segment captures. For example, a rule at `/users/$userId` makes `$userId` available as a string variable containing the matched key. |
+
+<Note>
+`data` and `newData` are scoped to the current path where the rule is defined. Use `root` when you need to look up data elsewhere in your database.
+</Note>
+
+## Snapshot methods
+
+The `data`, `newData`, and `root` variables are all snapshots. You can call these methods on any snapshot.
+
+| Method | Returns | Description |
+| --- | --- | --- |
+| `val()` | any | Returns the primitive value (string, number, boolean, null) at this snapshot. |
+| `exists()` | boolean | Returns `true` if this snapshot contains any data (is not null). |
+| `hasChild(path)` | boolean | Returns `true` if the specified child path exists. `path` can be a single key or a slash-separated path. |
+| `hasChildren(keys)` | boolean | Returns `true` if **all** of the specified child keys exist. `keys` is an array of strings. |
+| `parent()` | snapshot | Returns a snapshot of the parent node. |
+| `child(path)` | snapshot | Returns a snapshot of the child at the given path. `path` can be a single key or a slash-separated path. |
+
+### Examples
+
+```
+// Check if the current data exists
+data.exists()
+
+// Check if the incoming data has both 'name' and 'score' children
+newData.hasChildren(['name', 'score'])
+
+// Read a sibling value
+data.parent().child('status').val() === 'active'
+
+// Look up data at another path entirely
+root.child('admins/' + auth.uid).exists()
+```
+
+## String methods
+
+These methods are available on any string value in a rule expression, including `auth.uid`, `$wildcard` captures, and string values returned by `val()`.
+
+| Method / Property | Returns | Description |
+| --- | --- | --- |
+| `contains(string)` | boolean | Returns `true` if the string contains the given substring. |
+| `beginsWith(string)` | boolean | Returns `true` if the string starts with the given prefix. |
+| `endsWith(string)` | boolean | Returns `true` if the string ends with the given suffix. |
+| `matches(regex)` | boolean | Returns `true` if the string matches the given regular expression. The regex follows standard regex syntax. |
+| `length` | number | The length of the string. This is a property, not a method — no parentheses. |
+
+### Examples
+
+```
+// Validate that a username is at least 3 characters
+newData.child('username').val().length >= 3
+
+// Check that an email looks valid
+newData.child('email').val().matches(/^[^@]+@[^@]+\.[^@]+$/)
+
+// Check a string prefix
+newData.child('type').val().beginsWith('game_')
+```
+
+## Operators
+
+Standard operators work inside rule expressions.
+
+### Comparison
+
+| Operator | Description |
+| --- | --- |
+| `===` | Strict equality |
+| `!==` | Strict inequality |
+| `<` | Less than |
+| `>` | Greater than |
+| `<=` | Less than or equal to |
+| `>=` | Greater than or equal to |
+
+### Logical
+
+| Operator | Description |
+| --- | --- |
+| `&&` | Logical AND |
+| `\|\|` | Logical OR |
+| `!` | Logical NOT |
+
+### Arithmetic
+
+| Operator | Description |
+| --- | --- |
+| `+` | Addition (also string concatenation) |
+| `-` | Subtraction |
+| `*` | Multiplication |
+| `/` | Division |
+| `%` | Modulo |
+
+### Ternary
+
+| Operator | Description |
+| --- | --- |
+| `? :` | Conditional expression. `condition ? valueIfTrue : valueIfFalse` |
+
+<Tip>
+You can use the `+` operator to build dynamic paths for `child()` lookups. For example: `root.child('users/' + auth.uid + '/role').val() === 'admin'`.
+</Tip>
+
+## Type checking
+
+To validate that incoming data is a specific type, compare the result of `val()` using JavaScript-style type checks.
+
+| Check | Expression |
+| --- | --- |
+| String | `newData.isString()` |
+| Number | `newData.isNumber()` |
+| Boolean | `newData.isBoolean()` |
+
+### Examples
+
+```
+// Ensure 'name' is a string and 'score' is a number
+".validate": "newData.child('name').isString() && newData.child('score').isNumber()"
+```
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Rules examples" icon="code" href="/platform/rules-examples">
+    See these building blocks in action with real-world patterns.
+  </Card>
+  <Card title="Security rules" icon="shield-halved" href="/platform/security-rules">
+    Go back to the overview to understand how rules are structured and evaluated.
+  </Card>
+</CardGroup>

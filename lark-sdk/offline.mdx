@@ -1,0 +1,149 @@
+---
+title: "Offline and reconnection"
+description: "Handle network interruptions gracefully"
+---
+
+# Offline and reconnection
+
+Network connections drop. Users go through tunnels, switch between Wi-Fi and cellular, or temporarily lose signal. The Lark SDK handles all of this automatically so your app stays functional.
+
+## Automatic reconnection
+
+When a connection drops unexpectedly, the SDK reconnects automatically using exponential backoff with jitter:
+
+| Attempt | Delay |
+|---|---|
+| 1 | ~1s |
+| 2 | ~2s |
+| 3 | ~4s |
+| 4 | ~8s |
+| 5 | ~16s |
+| 6+ | ~30s (max) |
+
+Jitter adds a random factor so that thousands of clients don't all reconnect at the same instant after a server restart.
+
+When the connection is re-established:
+
+- All active subscriptions are automatically re-registered.
+- Any pending writes that were queued while offline are sent to the server.
+- Your `onConnect` callbacks fire again.
+
+You don't need to write any reconnection logic. It just works.
+
+## Manual control
+
+### `goOffline()` and `goOnline()`
+
+Pause and resume the connection manually. This preserves your local cache and subscription registrations.
+
+```typescript
+import { LarkDatabase } from "@lark-sh/client";
+
+const db = new LarkDatabase("my-project/my-database");
+await db.connect({ anonymous: true });
+
+// Pause the connection (e.g., app going to background)
+db.goOffline();
+
+// Resume later
+db.goOnline();
+```
+
+While offline via `goOffline()`:
+
+- Writes are queued locally and sent when you go back online.
+- Subscriptions still reflect the last known cached data.
+- No network traffic occurs.
+
+### `disconnect()`
+
+Fully tears down the connection and clears everything — cache, subscriptions, pending writes. Use this when you're completely done with the database.
+
+```typescript
+db.disconnect();
+```
+
+### Comparison
+
+| | `goOffline()` / `goOnline()` | `disconnect()` |
+|---|---|---|
+| Local cache | Preserved | Cleared |
+| Subscriptions | Preserved, re-established on `goOnline()` | Removed |
+| Pending writes | Preserved, sent on `goOnline()` | Cleared |
+| Reconnect method | `goOnline()` | `connect(options)` |
+| Use case | Temporary pause (background/foreground) | Permanent teardown |
+
+## Pending writes
+
+When the SDK is offline, writes queue up locally. You can inspect and manage this queue.
+
+### `db.hasPendingWrites()`
+
+Returns `true` if there are writes waiting to be sent to the server:
+
+```typescript
+if (db.hasPendingWrites()) {
+  showSyncIndicator();
+}
+```
+
+### `db.getPendingWriteCount()`
+
+Returns the number of pending writes:
+
+```typescript
+const count = db.getPendingWriteCount();
+console.log(`${count} writes pending`);
+```
+
+### `db.clearPendingWrites()`
+
+Discards all pending writes. Use this carefully — those writes will be lost permanently.
+
+```typescript
+db.clearPendingWrites();
+```
+
+<Warning>
+`clearPendingWrites()` cannot be undone. Any writes that haven't been acknowledged by the server are permanently discarded. Only use this if you're sure you want to throw away those changes.
+</Warning>
+
+## Connection status
+
+The SDK provides a special path `.info/connected` that reflects the current connection state. This is useful for showing online/offline indicators in your UI.
+
+```typescript
+const unsubscribe = db.ref(".info/connected").on("value", (snapshot) => {
+  const connected = snapshot.val();
+
+  if (connected) {
+    console.log("Online");
+  } else {
+    console.log("Offline");
+  }
+});
+```
+
+<Tip>
+Combine `.info/connected` with [OnDisconnect](/lark-sdk/ondisconnect) operations to build robust presence systems that track which users are currently online.
+</Tip>
+
+## Monitoring reconnection
+
+Use lifecycle callbacks to track reconnection attempts:
+
+```typescript
+db.onDisconnect(() => {
+  console.log("Connection lost");
+  showOfflineBanner();
+});
+
+db.onReconnecting((attempt) => {
+  console.log(`Reconnecting... attempt ${attempt}`);
+});
+
+db.onConnect(() => {
+  console.log("Back online");
+  hideOfflineBanner();
+});
+```

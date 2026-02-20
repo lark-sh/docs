@@ -1,0 +1,56 @@
+---
+title: "Database management"
+description: "Create, browse, edit, and manage your databases"
+---
+
+The **Databases** section on your project dashboard lists all databases in your project.
+
+## Listing databases
+
+Each database shows its ID, status (active or inactive), server ID, and last activity timestamp. Use the search box to filter by database ID. Results paginate at 100 per page.
+
+## Creating a database
+
+Click **New Database** and enter an ID. Database IDs must be alphanumeric and no longer than 40 characters.
+
+<Tip>Enable **Auto Create** in your [project settings](/dashboard/settings) to create databases automatically on first client connection. This is the easiest way to get started.</Tip>
+
+## Deleting a database
+
+Click the delete button next to any database. This is permanent — all data in that database is removed immediately.
+
+## The data editor
+
+Click any database ID to open the real-time JSON editor. This gives you a live view of the data in your database.
+
+### Tree view
+
+Used for smaller datasets. You get an interactive JSON tree where you can:
+
+- Expand and collapse nodes
+- Click any value to edit it inline
+- Add new properties
+- Delete nodes
+
+Changes are highlighted in amber and save immediately.
+
+### Shallow view
+
+Automatically used for large datasets (more than 500 keys or 20MB). This shows a flat key list with search and sort. Click any key to navigate deeper into the tree.
+
+### Navigation
+
+A breadcrumb trail at the top shows your current path. Click any segment to navigate back up.
+
+### Connection status
+
+A badge in the editor shows whether you are connected to the live database.
+
+## Import and export
+
+You can move data in and out of any database path.
+
+- **Export**: Downloads the data at your current path as a `.json` file. Supports exports up to 256MB.
+- **Import**: Upload a `.json` file to replace data at the current path. Supports imports up to 256MB.
+
+<Note>Import replaces all data at the current path. It does not merge with existing data.</Note>
