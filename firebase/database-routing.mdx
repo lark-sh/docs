@@ -51,10 +51,10 @@ const config = {
 const db = firebase.initializeApp(config).database();
 
 // Same paths as before — the room prefix is still there
-db.ref('room-abc123/players/alice').set({ name: 'Alice' });
+db.ref(`${roomId}/players/alice`).set({ name: 'Alice' });
 ```
 
-The first path segment (`room-abc123`) is technically redundant — it matches the database name — but that's the point. Your paths, your security rules, your entire data model stays identical. The only change is the connection URL.
+The first path segment (`room-abc123`) is technically redundant — it matches the database name — but that's okay, because it allows your paths, your security rules, and your entire data model to stay identical. The only change is the connection URL.
 
 Inside the `room-abc123` database, the data looks like:
 
@@ -64,8 +64,6 @@ room-abc123/
     alice/...
   chat/...
 ```
-
-Yes, there's a "wasted" level in the tree. That's the tradeoff for zero code and rule changes.
 
 **When to use this:** When you want separate databases with no changes to your client code paths or security rules. You just need to vary the connection URL per room, which typically means one line of code where you construct the Firebase config.
 
@@ -92,7 +90,7 @@ Your client code stays identical to what you had on Firebase. No connection URL 
 **When to use this:** When you want the benefits of separate databases without changing any client code or connection URLs. This is the fastest migration path.
 
 <Warning>
-Because the first path segment is stripped, your security rules need to be adjusted. A rule that was at `rules/$roomId/players/$uid` becomes `rules/players/$uid` — the `$roomId` level is gone because each database gets its own copy of the rules, scoped to the data inside it.
+Because the first path segment is stripped, your security rules need to be adjusted. A rule that was at `rules/$roomId/players/$uid` becomes `rules/players/$uid` — the `$roomId` level is gone because each database gets its own copy of the rules, scoped to the data inside it. You will likely want to replace `$roomId` with `lark.databaseId`.
 </Warning>
 
 ## Option 3: Keep everything in one database
@@ -135,5 +133,5 @@ For apps with a small number of rooms or low write frequency, a single database 
 5. If using Option 2, update your security rules to remove the top-level path segment.
 
 <Tip>
-You can test this incrementally. Create a few databases manually in the dashboard, point some test clients at them, and verify everything works before enabling Auto Create for production traffic.
+You can test this incrementally. Create a few databases manually in the dashboard, point some test clients at them, and verify everything works before moving over production traffic.
 </Tip>
