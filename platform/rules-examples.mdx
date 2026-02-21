@@ -240,6 +240,21 @@ You can also enforce size limits to prevent clients from downloading too much da
 }
 ```
 
+## Database-specific rules
+
+Use `lark.databaseId` and `lark.projectId` to write rules that are aware of which database they're running against. This is especially useful when you have one database per game session or room — a single set of rules can enforce that users only access the database they've been assigned to.
+
+```json
+{
+  "rules": {
+    ".read": "auth.token.game_id === lark.databaseId",
+    ".write": "auth.token.game_id === lark.databaseId"
+  }
+}
+```
+
+Here, each user's auth token includes a `game_id` custom claim set by your server when the player joins a game. The rule compares it against `lark.databaseId` — the name of the database being accessed. A player assigned to game `match-4821` can read and write the `match-4821` database, but gets `PERMISSION_DENIED` if they try to connect to `match-9903`. One rule set covers every game database in the project.
+
 ## What's next
 
 <CardGroup cols={2}>

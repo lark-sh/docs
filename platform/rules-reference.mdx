@@ -20,6 +20,8 @@ These variables are available in every rule expression.
 | `root` | snapshot | A snapshot of the root of the entire database. Use this to read data at other paths. |
 | `now` | number | The current server timestamp in milliseconds since epoch. |
 | `$wildcards` | string | Path segment captures. For example, a rule at `/users/$userId` makes `$userId` available as a string variable containing the matched key. |
+| `lark.projectId` | string | The ID of the current project. |
+| `lark.databaseId` | string | The ID of the current database (the database name, not including the project prefix). |
 
 <Note>
 `data` and `newData` are scoped to the current path where the rule is defined. Use `root` when you need to look up data elsewhere in your database.

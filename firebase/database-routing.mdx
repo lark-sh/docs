@@ -109,6 +109,8 @@ db.ref('room-abc123/players/alice').set({ name: 'Alice' });
 
 No code changes, no rule changes, no routing to think about. Your data layout stays exactly as it was on Firebase.
 
+All of your data is stored in a single database called `default`. This matches Firebase's standard behavior — one namespace, one database.
+
 **When to use this:** When you're migrating from Firebase and want zero changes beyond the connection URL. This works fine and is a perfectly valid approach.
 
 ## Comparing the three options
