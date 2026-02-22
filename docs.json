@@ -165,7 +165,8 @@
             "group": "CLI",
             "pages": [
               "cli/overview",
-              "cli/commands"
+              "cli/commands",
+              "cli/claude-code"
             ]
           }
         ]

@@ -1,0 +1,35 @@
+---
+title: "Claude Code plugin"
+description: "Use Lark with Claude Code for AI-assisted development"
+---
+
+# Claude Code plugin
+
+The official Lark plugin for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) gives Claude full context on the Lark CLI, REST API, admin API, and common development patterns. When the plugin is active, Claude can help you write Lark integration code, debug issues, manage your databases, and set up CI/CD pipelines — all with accurate, up-to-date knowledge of the Lark platform.
+
+## What it includes
+
+- **CLI command reference** — Full documentation for `lark data`, `lark projects`, `lark databases`, `lark rules`, and all other CLI commands.
+- **API specifications** — REST data API and admin API endpoints, authentication details, and request/response formats.
+- **Common patterns** — Backup and restore, data seeding, watch scripts, CI/CD integration, and other real-world workflows.
+- **Naming conventions** — ID formats, naming standards, and best practices for structuring your Lark data.
+
+## Installation
+
+Install the plugin from the Lark marketplace:
+
+```bash
+/plugin marketplace add lark-sh/lark-skill
+/plugin install lark@lark-tools
+```
+
+## Usage
+
+Use `/lark` in any Claude Code conversation to activate the plugin manually. Claude will also load it automatically when it detects you're working with Lark.
+
+Once active, you can ask Claude things like:
+
+- "Set up a Lark database for my multiplayer game"
+- "Write a backup script that exports my database nightly"
+- "Help me write security rules for user-owned data"
+- "Create a CI pipeline that deploys my security rules on push"
