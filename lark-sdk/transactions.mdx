@@ -110,11 +110,14 @@ await db.transaction([
 
 If any condition fails, the entire transaction is rejected and no writes are applied.
 
-For complex objects, Lark computes a SHA-256 hash for comparison. This lets you condition on "this object hasn't changed" without specifying every field:
+You can also pass a snapshot of a complex object as a condition. Internally, the LarkJS library will compute a hash representing the state of this object and pass it as the condition to the server, keeping the transaction efficient (so the entire object isn't sent).
 
 ```typescript
+
+const snapshot = await db.ref("/game/state").once("value");
+
 await db.transaction([
-  { op: "condition", path: "/game/state", value: currentStateHash },
+  { op: "condition", path: "/game/state", value: snapshot },
   { op: "set", path: "/game/state", value: newState },
 ]);
 ```

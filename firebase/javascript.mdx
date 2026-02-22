@@ -19,8 +19,6 @@ var firebaseConfig = {
 };
 ```
 
-That's it. One line. The rest of your code stays exactly the same — every `ref()`, `on()`, `set()`, and `update()` call works without modification.
-
 ## Firebase JS SDK v8
 
 ```javascript
@@ -53,5 +51,3 @@ Before connecting, make sure your Lark project is configured correctly:
 
 1. **Allow Legacy Firebase** must be enabled in your Lark project settings. This turns on the Firebase wire protocol.
 2. If your Firebase app stores many independent data silos under path prefixes (game rooms, workspaces, etc.), see [Database routing](/firebase/database-routing) for options on splitting them into separate Lark databases.
-
-<Tip>You can test Lark with a percentage of your traffic first. Send 5% of connections to Lark and keep 95% on Firebase. If anything goes wrong, switch back — one URL change.</Tip>

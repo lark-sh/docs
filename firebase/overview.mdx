@@ -17,13 +17,6 @@ The [REST API](/rest-api/overview) is also fully compatible — if your backend 
 
 To use Firebase SDKs with Lark, toggle **Allow Legacy Firebase** in your project's settings in the Lark dashboard. This enables the Firebase wire protocol on your project's endpoint.
 
-## What you get
-
-Everything Firebase RTDB offers, plus:
-
-- **Performance** — Sub-50ms p99 latency.
-- **New features** — Volatile paths, shared view optimization, and more.
-
 ## What's different
 
 Not much. Three things change:
@@ -31,8 +24,6 @@ Not much. Three things change:
 1. **Connection URL** — You point at `larkdb.net` instead of `firebaseio.com`.
 2. **Auth configuration** — If you use Firebase Auth, you tell Lark your Firebase project ID so it can validate tokens.
 3. **A few edge cases** — Documented in the [compatibility notes](/firebase/compatibility).
-
-Everything else stays the same. Your code, your security rules, your data model — all unchanged.
 
 ## What's next
 

@@ -7,9 +7,9 @@ description: "The native JavaScript/TypeScript SDK for Lark"
 
 The Lark SDK (`@lark-sh/client`) is the official JavaScript/TypeScript client for Lark databases. It gives you real-time data synchronization, offline support, and a modern developer experience in a lightweight package.
 
-## Why the Lark SDK?
+## Lark SDK Features
 
-**Small footprint.** The entire SDK is ~20KB gzipped. No bloated dependency trees. It loads fast and stays out of your way.
+**Small footprint.** The entire SDK is ~20KB gzipped.
 
 **Modern API design.** Subscriptions return an unsubscribe function directly — no need to track callbacks or call a separate `off()` method. This plays nicely with React's `useEffect` cleanup, Vue's `onUnmounted`, and any other framework lifecycle pattern.
 
@@ -31,7 +31,7 @@ unsubscribe();
 
 **Volatile path support.** Ephemeral data like cursor positions, typing indicators, and player coordinates can flow through volatile paths — high-frequency updates that skip persistence for maximum speed.
 
-**Full TypeScript types.** Every method, option, and return value is fully typed. You get autocompletion and compile-time safety without installing separate type packages.
+**Full TypeScript types.** Every method, option, and return value is fully typed.
 
 ## Installation
 

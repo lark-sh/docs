@@ -3,7 +3,7 @@ title: "Subscriptions"
 description: "Listen for real-time updates with the Lark SDK"
 ---
 
-Subscriptions are the core of Lark's real-time capabilities. When data changes on the server, your callback fires with the updated data — no polling, no manual refreshes.
+Subscriptions are the core of Lark's real-time capabilities. When data changes on the server, your callback fires with the updated data.
 
 For a conceptual overview of how subscriptions work under the hood (delta sync, shared views), see [Subscriptions](/platform/subscriptions).
 
@@ -25,7 +25,7 @@ unsubscribe();
 ```
 
 <Tip>
-The unsubscribe pattern works perfectly with React's `useEffect` cleanup, Vue's `onUnmounted`, and similar framework lifecycle hooks.
+The unsubscribe pattern works well with React's `useEffect` cleanup, Vue's `onUnmounted`, and similar framework lifecycle hooks.
 </Tip>
 
 ## Event types
