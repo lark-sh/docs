@@ -5,8 +5,6 @@ description: "Read and write data over HTTP — no SDK required"
 
 Lark exposes a REST API for reading and writing data over plain HTTP. If you're working from a server, a script, a CLI tool, or any environment where you don't want to maintain a persistent connection, the REST API is the way to go.
 
-The REST API is fully compatible with the [Firebase Realtime Database REST API](https://firebase.google.com/docs/reference/rest/database). If you have existing code that hits Firebase's `/.json` endpoints, it works with Lark by changing the hostname.
-
 ## URL format
 
 Every REST request targets a path in your database, with `.json` appended:
@@ -38,8 +36,6 @@ https://{database}--{projectId}.larkdb.net/{path}.json
 ```
 https://my-game--chess-app.larkdb.net/players/alice.json
 ```
-
-<Tip>If you're migrating a legacy Firebase application, you'll likely want to use the database-in-subdomain format so you don't have to change your URLs.</Tip>
 
 ## Authentication
 

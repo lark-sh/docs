@@ -7,14 +7,14 @@ When multiple clients write to the same data at the same time, you can get race 
 
 ## Why transactions
 
-Imagine two players both try to increment a score at the same time. Without transactions:
+Imagine two players both try to increment a counter at the same time. Without transactions:
 
-1. Client A reads the score: `10`
-2. Client B reads the score: `10`
+1. Client A reads the counter: `10`
+2. Client B reads the counter: `10`
 3. Client A writes `11`
 4. Client B writes `11`
 
-The score should be `12`, but it's `11`. One increment was lost. Transactions prevent this.
+The counter should be `12`, but it's `11`. One increment was lost. Transactions prevent this.
 
 ## Callback-style transactions
 
@@ -24,7 +24,7 @@ Here's what happens under the hood:
 
 1. The SDK reads the current value at the path.
 2. Your function runs, receiving the current value and returning the new value.
-3. The SDK sends the new value to the server along with the expected current value.
+3. The SDK sends the new value to the server along with the value of the path that your client saw when it made the change.
 4. If another client changed the value between your read and write, the server rejects the transaction.
 5. Your function is called again with the updated value.
 6. This repeats until the write succeeds or the retry limit is reached (25 attempts).
@@ -50,7 +50,7 @@ Sometimes you need to update multiple paths atomically — either all the change
 
 In array-syntax transactions, you can add `condition` operations that check the current value before proceeding. If any condition fails, the entire transaction is rejected and no writes are applied.
 
-For primitive values (strings, numbers, booleans), the condition compares the value directly. For complex objects, Lark computes a SHA-256 hash of the current value and compares that. This lets you condition on "this object hasn't changed" without specifying every field.
+For primitive values (strings, numbers, booleans), the condition compares the value directly. For complex objects, to be efficient and avoid sending the entire object's data over the wire, Lark computes a SHA-256 hash of the current value and compares that. This lets you condition on "this object hasn't changed" without specifying every field. This is handled for you and you don't need to worry about how calculating the hash yourself, but it's useful to know how to works in the background.
 
 <Tip>
 Use callback-style transactions for simple read-modify-write operations on a single path (like counters). Use multi-path transactions with conditions when you need to update several paths atomically or enforce preconditions.

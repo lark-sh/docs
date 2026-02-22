@@ -3,8 +3,6 @@ title: "Limits"
 description: "Size limits, key rules, and operational constraints"
 ---
 
-Lark enforces the same limits as Firebase Realtime Database, with one exception: there are no rate limits on [volatile](/platform/volatile) writes or events.
-
 ## Data tree
 
 ### Keys
@@ -98,7 +96,7 @@ Volatile paths have **no rate limit** on writes per second or events per second.
 
 A simultaneous connection is one mobile device, browser tab, or server app connected to the database. This isn't the same as your total user count — users don't all connect at once. An app with millions of monthly users typically has far fewer simultaneous connections.
 
-To scale beyond 200,000 connections, use multiple databases. See [database routing](/firebase/database-routing) for patterns on splitting data across databases.
+To scale beyond 200,000 connections, use multiple databases.
 
 ## Summary
 
@@ -124,8 +122,5 @@ To scale beyond 200,000 connections, use multiple databases. See [database routi
 <CardGroup cols={2}>
   <Card title="Volatile paths" icon="bolt" href="/platform/volatile">
     High-frequency data with no rate limits.
-  </Card>
-  <Card title="Database routing" icon="route" href="/firebase/database-routing">
-    Scale beyond single-database limits by splitting data across databases.
   </Card>
 </CardGroup>

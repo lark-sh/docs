@@ -100,7 +100,7 @@ await newRef.set({
 });
 ```
 
-Push keys are designed to sort chronologically. If two clients push at the same time, both writes succeed and the keys maintain a consistent order. No conflicts, no overwrites.
+Push keys are designed to sort chronologically. If two clients push at the same time, both writes succeed and the keys maintain a consistent order.
 
 <Note>
 Push keys contain a timestamp component plus randomness. They sort in chronological order, so querying with `orderByKey` gives you messages in the order they were created.

@@ -21,7 +21,7 @@ Lark supports five event types, each suited for different use cases.
 
 ## How delta sync works
 
-Lark doesn't re-send the entire dataset every time something changes. When you subscribe to a path, the server computes the minimal delta and sends only what changed. Your SDK assembles these deltas into full snapshots before calling your callbacks.
+Lark doesn't re-send the entire dataset every time something changes. When you subscribe to a path, the server computes the minimal delta and sends only what changed. The client-side SDK assembles these deltas into full snapshots before calling your callbacks.
 
 This means subscribing to a path with 10,000 children doesn't re-transmit all 10,000 children when one of them changes. The server sends a small delta describing the change, and your local SDK patches its cached copy.
 
