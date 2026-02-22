@@ -20,7 +20,7 @@ Lark is a **Firebase Realtime Database alternative** — a real-time database wi
 Overview of the service, getting oriented, and dashboard usage.
 
 #### Group: Getting started
-- **Introduction** (`index.mdx`) — What is Lark, why use it, key features (real-time sync, Firebase-compatible, sub-50ms latency, WebSocket + WebTransport, ~20KB native client). Positioning: drop-in Firebase RTDB replacement built for games.
+- **Introduction** (`index.mdx`) — What is Lark, key features (real-time sync, Firebase-compatible, sub-50ms latency, WebSocket + WebTransport, ~20KB native client). Positioning: drop-in Firebase RTDB replacement built for games.
 - **Quickstart** (`quickstart.mdx`) — Fastest path to a working app. Create a project in the dashboard, install SDK, connect, write/read/subscribe. Minimal working example.
 
 #### Group: Dashboard
