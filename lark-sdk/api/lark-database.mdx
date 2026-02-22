@@ -18,10 +18,22 @@ Creates a new `LarkDatabase` instance.
 | `projectAndDatabase` | `string` | A combined identifier in the format `'projectId/databaseId'`. |
 | `options` | `LarkDatabaseOptions` | Optional configuration object. |
 
+### LarkDatabaseOptions
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `anonymous` | `boolean` | `false` | Connect without user credentials. |
+| `token` | `string` | — | A JWT for authenticated access. |
+| `domain` | `string` | `'larkdb.net'` | The Lark server domain. |
+| `transport` | `'auto' \| 'websocket' \| 'webtransport'` | `'auto'` | Which transport protocol to use. |
+| `webtransportTimeout` | `number` | `2000` | Milliseconds to wait for WebTransport before falling back to WebSocket. |
+
+You must provide either `anonymous: true` or a `token`. If you pass both, the token takes priority.
+
 ```typescript
 import { LarkDatabase } from '@lark-sh/client';
 
-const db = new LarkDatabase('my-project/my-database');
+const db = new LarkDatabase('my-project/my-database', { anonymous: true });
 ```
 
 ## Properties
@@ -49,14 +61,14 @@ const db = new LarkDatabase('my-project/my-database');
 ### connect
 
 ```typescript
-connect(options?: ConnectOptions): Promise<void>
+connect(): Promise<void>
 ```
 
-Opens a connection to the Lark server. Resolves when the connection is established.
+Opens a connection to the Lark server using the options passed to the constructor. Resolves when the connection is fully established and authenticated.
 
 ```typescript
-const db = new LarkDatabase('my-project/my-database');
-await db.connect();
+const db = new LarkDatabase('my-project/my-database', { anonymous: true });
+await db.connect(); // optional — operations queue automatically
 ```
 
 ### disconnect

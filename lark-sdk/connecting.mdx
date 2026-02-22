@@ -5,31 +5,28 @@ description: "Manage connections, lifecycle, and transport options"
 
 # Connecting
 
-The `LarkDatabase` class is your entry point. You create an instance, configure how it should connect, and then call `connect()`.
+The `LarkDatabase` class is your entry point. Pass your project, database, and auth details to the constructor and start using it immediately — the connection happens automatically.
 
 ## Creating an instance
 
-The constructor takes a single string in the format `projectId/databaseId`:
+The constructor takes a path string in the format `projectId/databaseId`, and an options object:
 
 ```typescript
 import { LarkDatabase } from "@lark-sh/client";
 
-const db = new LarkDatabase("my-project/my-database");
-```
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 
-This doesn't open a connection yet. It just creates the client instance.
-
-## Connect options
-
-Call `db.connect(options)` to establish a connection. It returns a promise that resolves when you're fully connected and authenticated.
-
-```typescript
-await db.connect({
-  anonymous: true,
+// Start using it right away — operations queue and run once connected
+db.ref("users").on("value", (snapshot) => {
+  console.log(snapshot.val());
 });
 ```
 
-Here's the full set of options:
+The connection is established lazily. You don't need to call anything else before reading, writing, or subscribing — operations queue automatically and execute once the connection is authenticated.
+
+## Options
+
+All connection configuration is passed as the second argument to the constructor:
 
 | Option | Type | Default | Description |
 |---|---|---|---|
@@ -43,25 +40,36 @@ Here's the full set of options:
 You must provide either `anonymous: true` or a `token`. If you pass both, the token takes priority.
 </Note>
 
+## Waiting for the connection
+
+If you need to confirm the connection is established before proceeding, you can optionally call `await db.connect()`:
+
+```typescript
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
+await db.connect(); // resolves when fully connected and authenticated
+```
+
+Most code doesn't need this — lazy queuing handles it for you. Use `await db.connect()` when you need to gate logic on a confirmed connection (e.g., showing a "connected" indicator, or failing fast if the server is unreachable).
+
 ### Transport selection
 
 By default, the SDK uses `'auto'` mode. It tries WebTransport (HTTP/3) first for lower latency. If WebTransport isn't available or doesn't connect within `webtransportTimeout` milliseconds, it falls back to WebSocket.
 
 ```typescript
 // Force WebSocket only
-await db.connect({
+const db = new LarkDatabase("my-project/my-database", {
   anonymous: true,
   transport: "websocket",
 });
 
 // Force WebTransport only (will fail if not supported)
-await db.connect({
+const db = new LarkDatabase("my-project/my-database", {
   anonymous: true,
   transport: "webtransport",
 });
 
 // Auto with a longer timeout for WebTransport negotiation
-await db.connect({
+const db = new LarkDatabase("my-project/my-database", {
   anonymous: true,
   transport: "auto",
   webtransportTimeout: 5000,
@@ -172,5 +180,5 @@ db.goOnline();
 ```
 
 <Warning>
-After calling `disconnect()`, you need to call `connect()` again with full options to re-establish the connection. After `goOffline()`, a simple `goOnline()` is enough.
+After calling `disconnect()`, you need to create a new `LarkDatabase` instance and call `connect()` again to re-establish the connection. After `goOffline()`, a simple `goOnline()` is enough.
 </Warning>

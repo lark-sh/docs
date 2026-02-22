@@ -14,8 +14,7 @@ Overwrites the data at a reference. Any existing data at that location — inclu
 ```typescript
 import { LarkDatabase } from "@lark-sh/client";
 
-const db = new LarkDatabase("my-project/my-database");
-await db.connect({ anonymous: true });
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 
 // Write an object
 await db.ref("users/alice").set({
@@ -136,8 +135,7 @@ Resolves to the server's current timestamp (milliseconds since epoch) when the w
 ```typescript
 import { LarkDatabase, ServerValue } from "@lark-sh/client";
 
-const db = new LarkDatabase("my-project/my-database");
-await db.connect({ anonymous: true });
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 
 await db.ref("users/alice").update({
   lastSeen: ServerValue.TIMESTAMP,

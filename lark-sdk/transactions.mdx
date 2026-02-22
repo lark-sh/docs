@@ -14,8 +14,7 @@ The most common pattern. Pass a function that receives the current value and ret
 ```typescript
 import { LarkDatabase } from "@lark-sh/client";
 
-const db = new LarkDatabase("my-project/my-database");
-await db.connect({ anonymous: true });
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 
 const result = await db.ref("counters/pageViews").transaction((currentValue) => {
   return (currentValue ?? 0) + 1;

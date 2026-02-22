@@ -14,8 +14,7 @@ Reads data at a reference and returns a promise that resolves with a `DataSnapsh
 ```typescript
 import { LarkDatabase } from "@lark-sh/client";
 
-const db = new LarkDatabase("my-project/my-database");
-await db.connect({ anonymous: true });
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 
 const snapshot = await db.ref("users/alice").once("value");
 

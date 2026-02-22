@@ -18,8 +18,7 @@ Sort by a child key's value:
 ```typescript
 import { LarkDatabase } from "@lark-sh/client";
 
-const db = new LarkDatabase("my-project/my-database");
-await db.connect({ anonymous: true });
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 
 // Sort players by score
 const topPlayers = db.ref("players").orderByChild("score");

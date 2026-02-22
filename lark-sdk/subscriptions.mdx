@@ -14,8 +14,7 @@ Call `ref.on(eventType, callback)` to start listening. It returns an **unsubscri
 ```typescript
 import { LarkDatabase } from "@lark-sh/client";
 
-const db = new LarkDatabase("my-project/my-database");
-await db.connect({ anonymous: true });
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 
 const unsubscribe = db.ref("scores/player1").on("value", (snapshot) => {
   console.log("Current score:", snapshot.val());

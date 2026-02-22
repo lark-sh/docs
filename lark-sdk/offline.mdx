@@ -39,8 +39,7 @@ Pause and resume the connection manually. This preserves your local cache and su
 ```typescript
 import { LarkDatabase } from "@lark-sh/client";
 
-const db = new LarkDatabase("my-project/my-database");
-await db.connect({ anonymous: true });
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 
 // Pause the connection (e.g., app going to background)
 db.goOffline();
@@ -70,7 +69,7 @@ db.disconnect();
 | Local cache | Preserved | Cleared |
 | Subscriptions | Preserved, re-established on `goOnline()` | Removed |
 | Pending writes | Preserved, sent on `goOnline()` | Cleared |
-| Reconnect method | `goOnline()` | `connect(options)` |
+| Reconnect method | `goOnline()` | New instance + `connect()` |
 | Use case | Temporary pause (background/foreground) | Permanent teardown |
 
 ## Pending writes

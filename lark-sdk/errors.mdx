@@ -12,8 +12,7 @@ The Lark SDK uses a consistent error model. Every error thrown by the SDK is a `
 ```typescript
 import { LarkDatabase, LarkError } from "@lark-sh/client";
 
-const db = new LarkDatabase("my-project/my-database");
-await db.connect({ anonymous: true });
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 
 try {
   await db.ref("admin/secret").set("hack");

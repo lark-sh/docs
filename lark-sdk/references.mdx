@@ -14,8 +14,7 @@ Call `db.ref(path)` with a slash-separated path string:
 ```typescript
 import { LarkDatabase } from "@lark-sh/client";
 
-const db = new LarkDatabase("my-project/my-database");
-await db.connect({ anonymous: true });
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 
 const usersRef = db.ref("users");
 const aliceRef = db.ref("users/alice");

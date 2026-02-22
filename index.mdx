@@ -38,7 +38,6 @@ Lark stores your data as a JSON tree. You read and write to paths in that tree, 
 import { LarkDatabase } from '@lark-sh/client';
 
 const db = new LarkDatabase('my-project/my-database', { anonymous: true });
-await db.connect();
 
 // Write data
 await db.ref('players/alice').set({ name: 'Alice', score: 0 });

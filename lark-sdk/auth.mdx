@@ -14,19 +14,17 @@ The simplest option. Connect without any user identity:
 ```typescript
 import { LarkDatabase } from "@lark-sh/client";
 
-const db = new LarkDatabase("my-project/my-database");
-
-await db.connect({ anonymous: true });
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 ```
 
-Anonymous connections are assigned a temporary UID by the server. They can read and write data according to your security rules, but they have no persistent identity across sessions.
+Anonymous connections are not assigned a UID and auth will be `null` for any security rules checks. You can still choose to let anonymous users read or modify data in your app by setting your security rules appropriately.
 
 ## Token-based authentication
 
-For identified users, pass a JWT at connect time:
+For identified users, pass a JWT when creating the instance:
 
 ```typescript
-await db.connect({
+const db = new LarkDatabase("my-project/my-database", {
   token: "eyJhbGciOiJIUzI1NiIs...",
 });
 ```
@@ -47,7 +45,8 @@ Authenticate with a new token. If you were previously anonymous or signed in as 
 
 ```typescript
 // Start anonymous
-await db.connect({ anonymous: true });
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
+await db.connect();
 
 // Later, sign in with a token
 await db.signIn("eyJhbGciOiJIUzI1NiIs...");
@@ -109,7 +108,7 @@ The callback fires immediately with the current auth state, then again whenever 
 ```typescript
 import { LarkDatabase } from "@lark-sh/client";
 
-const db = new LarkDatabase("my-project/my-database");
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 
 // Listen for auth state changes
 db.onAuthStateChanged((auth) => {
@@ -121,9 +120,6 @@ db.onAuthStateChanged((auth) => {
     showLoginScreen();
   }
 });
-
-// Connect anonymously first
-await db.connect({ anonymous: true });
 
 // When the user logs in through your app's UI
 async function handleLogin(token: string) {

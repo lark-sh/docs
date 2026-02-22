@@ -16,8 +16,7 @@ Call `ref.onDisconnect()` to get an `OnDisconnect` object, then chain a write me
 ```typescript
 import { LarkDatabase, ServerValue } from "@lark-sh/client";
 
-const db = new LarkDatabase("my-project/my-database");
-await db.connect({ anonymous: true });
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 
 // When this client disconnects, set "online" to false
 await db.ref("users/alice/online").onDisconnect().set(false);
@@ -83,8 +82,7 @@ The most common use case for OnDisconnect is a presence system — tracking whic
 ```typescript
 import { LarkDatabase, ServerValue } from "@lark-sh/client";
 
-const db = new LarkDatabase("my-project/my-database");
-await db.connect({ token: "user-jwt-token" });
+const db = new LarkDatabase("my-project/my-database", { token: "user-jwt-token" });
 
 const uid = db.auth!.uid;
 const userStatusRef = db.ref(`users/${uid}/status`);

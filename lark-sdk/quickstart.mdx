@@ -18,14 +18,10 @@ npm install @lark-sh/client
 ```typescript
 import { LarkDatabase } from "@lark-sh/client";
 
-// Create a database instance with your project and database IDs
-const db = new LarkDatabase("my-project/my-database");
-
-// Connect with anonymous authentication
-await db.connect({ anonymous: true });
-
-console.log("Connected!");
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 ```
+
+That's it — operations queue automatically and run once the connection is established. No need to `await` anything before you start using the database.
 
 <Tip>
 You can find your project and database IDs in the Lark dashboard. The format is always `projectId/databaseId`.
@@ -83,9 +79,7 @@ Here's everything in one file:
 import { LarkDatabase } from "@lark-sh/client";
 
 async function main() {
-  // Connect
-  const db = new LarkDatabase("my-project/my-database");
-  await db.connect({ anonymous: true });
+  const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 
   // Write
   await db.ref("users/alice").set({

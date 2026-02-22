@@ -41,7 +41,6 @@ import { LarkDatabase } from '@lark-sh/client';
 const db = new LarkDatabase('your-project-id/my-first-database', {
   anonymous: true
 });
-await db.connect();
 
 // Write some data
 await db.ref('players/alice').set({

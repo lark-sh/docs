@@ -25,13 +25,13 @@ If the path doesn't exist, the response is `null`.
 
 ## Shallow reads
 
-For large datasets, you often don't need the entire subtree. Add `shallow=true` to get only the immediate keys with placeholder values:
+For large datasets, you often don't need the entire subtree. Add `shallow=true` to get only the immediate children without recursing into them:
 
 ```bash
 curl 'https://chess-app.larkdb.net/my-game/players.json?shallow=true'
 ```
 
-Response:
+By default, shallow reads replace every child with `true` — you see which keys exist, but nothing about their values or size:
 
 ```json
 {
@@ -41,7 +41,26 @@ Response:
 }
 ```
 
-Each key maps to `true` regardless of its actual value. This lets you discover what children exist without downloading all their data.
+### Enhanced shallow reads
+
+Add `v=2` for a more useful shallow response. With `v=2`, primitive values (strings, numbers, booleans) are returned as-is, and container objects are returned as `{".sz": N}` where N is the size in bytes:
+
+```bash
+curl 'https://chess-app.larkdb.net/my-game/.json?shallow=true&v=2'
+```
+
+```json
+{
+  "players": {".sz": 4096},
+  "settings": "dark",
+  "playerCount": 42,
+  "active": true
+}
+```
+
+This tells you a lot more at a glance — `players` is an object containing ~4 KB of data, while `settings`, `playerCount`, and `active` are leaf values you can read directly. Useful for exploring an unfamiliar database or deciding which subtrees are worth fetching in full.
+
+<Note>Without `v=2`, the response above would be `{"players": true, "settings": true, "playerCount": true, "active": true}` — no way to tell which children are containers and which are primitives.</Note>
 
 ## Querying
 

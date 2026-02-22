@@ -16,9 +16,9 @@ The Lark SDK (`@lark-sh/client`) is the official JavaScript/TypeScript client fo
 ```typescript
 import { LarkDatabase } from "@lark-sh/client";
 
-const db = new LarkDatabase("my-project/my-database");
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 
-// on() returns an unsubscribe function
+// on() returns an unsubscribe function — no need to await connect() first
 const unsubscribe = db.ref("scores").on("value", (snapshot) => {
   console.log(snapshot.val());
 });

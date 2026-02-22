@@ -24,8 +24,7 @@ The biggest API difference between the modern Lark SDK and the Firebase v8 compa
 ```typescript
 import { LarkDatabase } from "@lark-sh/client";
 
-const db = new LarkDatabase("my-project/my-database");
-await db.connect({ anonymous: true });
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 
 // on() returns an unsubscribe function
 const unsubscribe = db.ref("scores").on("value", (snapshot) => {
@@ -41,8 +40,7 @@ unsubscribe();
 ```typescript
 import { LarkDatabase } from "@lark-sh/client/fb-v8";
 
-const db = new LarkDatabase("my-project/my-database");
-await db.connect({ anonymous: true });
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 
 // on() returns the callback you passed in
 const callback = db.ref("scores").on("value", (snapshot) => {
@@ -70,8 +68,7 @@ The Firebase v8 API supports a `context` parameter for binding `this` inside you
 ```typescript
 import { LarkDatabase } from "@lark-sh/client/fb-v8";
 
-const db = new LarkDatabase("my-project/my-database");
-await db.connect({ anonymous: true });
+const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 
 class ScoreTracker {
   scores: Record<string, number> = {};
