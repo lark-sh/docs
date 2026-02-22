@@ -1,0 +1,172 @@
+---
+title: "CLI overview"
+description: "Manage your Lark projects, databases, and data from the terminal"
+---
+
+# Lark CLI
+
+The Lark CLI (`@lark-sh/cli`) gives you full control over your projects, databases, security rules, and data from the terminal. Anything you can do in the dashboard, you can do from the command line — plus data operations like export, import, and real-time streaming.
+
+## Installation
+
+```bash
+npm install -g @lark-sh/cli
+```
+
+Or run commands directly without installing:
+
+```bash
+npx @lark-sh/cli <command>
+```
+
+## Getting started
+
+### Log in
+
+```bash
+lark login
+```
+
+This opens your browser to the Lark dashboard. Authorize the CLI, and you're in. Your session is stored in `~/.lark/config.json`.
+
+### Set a default project
+
+Most commands need a project ID. Set a default so you don't have to pass `--project` every time:
+
+```bash
+lark config set-project my-project
+```
+
+You can always override it per-command with `--project <id>`.
+
+## Common workflows
+
+### Create a project and database
+
+```bash
+# Create a new project
+lark projects create "My Game"
+# Created project: my-game
+
+# Set it as default
+lark config set-project my-game
+
+# Create a database
+lark db create game-state
+```
+
+### Read and write data
+
+```bash
+# Write data
+lark data set game-state /players/alice '{"name": "Alice", "score": 0}'
+
+# Read it back
+lark data get game-state /players/alice
+# {"name": "Alice", "score": 0}
+
+# Update a single field (shallow merge)
+lark data update game-state /players/alice '{"score": 42}'
+
+# Push to a list with an auto-generated key
+lark data push game-state /messages '{"text": "Hello!", "sender": "alice"}'
+# -Nabc123def
+
+# Delete data
+lark data delete game-state /players/alice
+```
+
+### Pipe data from stdin
+
+Use `-` as the value to read from stdin — useful for large payloads or scripting:
+
+```bash
+cat player-data.json | lark data set game-state /players -
+
+echo '{"score": 99}' | lark data update game-state /players/alice -
+```
+
+### Watch for real-time changes
+
+Stream live changes to your terminal:
+
+```bash
+lark data watch game-state /players
+```
+
+Events print as they happen:
+
+```
+[put] {"path":"/","data":{"alice":{"name":"Alice","score":42}}}
+[patch] {"path":"/alice/score","data":99}
+```
+
+Press `Ctrl+C` to stop.
+
+### Export and import data
+
+```bash
+# Export a database to a file
+lark data export game-state -o backup.json
+
+# Export a specific path
+lark data export game-state /players -o players.json
+
+# Import data from a file
+lark data import game-state -f backup.json
+
+# Import to a specific path
+lark data import game-state /players -f players.json
+```
+
+### Manage security rules
+
+```bash
+# View current rules
+lark rules get
+
+# Set rules from a file (JSON5 supported)
+lark rules set -f rules.json
+
+# Or pipe them in
+cat rules.json | lark rules set
+```
+
+### Check metrics
+
+```bash
+# Show dashboard with current metrics
+lark dashboard
+
+# View recent events
+lark events
+
+# Check billing for a specific month
+lark billing --period 2026-02
+```
+
+## JSON output for scripting
+
+Every command supports `--json` for machine-readable output:
+
+```bash
+# Get project details as JSON
+lark projects show --json
+
+# List databases as JSON
+lark db list --json
+
+# Use with jq
+lark data get game-state /players --json | jq '.alice.score'
+```
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Command reference" icon="terminal" href="/cli/commands">
+    Full reference for every CLI command, flag, and option.
+  </Card>
+  <Card title="REST API" icon="code" href="/rest-api/overview">
+    The HTTP API that powers the CLI's data operations.
+  </Card>
+</CardGroup>

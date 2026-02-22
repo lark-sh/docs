@@ -157,6 +157,18 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "CLI",
+        "groups": [
+          {
+            "group": "CLI",
+            "pages": [
+              "cli/overview",
+              "cli/commands"
+            ]
+          }
+        ]
       }
     ],
     "global": {

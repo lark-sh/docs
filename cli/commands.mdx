@@ -1,0 +1,414 @@
+---
+title: "Command reference"
+description: "Complete reference for every Lark CLI command"
+---
+
+# Command reference
+
+All commands support the `--json` flag for machine-readable output.
+
+## Authentication
+
+### `lark login`
+
+Log in to Lark via your browser. Opens the dashboard authorization page, and the CLI receives your session token automatically.
+
+```bash
+lark login
+```
+
+Your session is saved to `~/.lark/config.json`.
+
+### `lark logout`
+
+Log out and clear the stored session.
+
+```bash
+lark logout
+```
+
+### `lark whoami`
+
+Show the currently logged-in user.
+
+```bash
+lark whoami
+# Riley Dutton (riley@example.com)
+```
+
+## Configuration
+
+### `lark config set-project <id>`
+
+Set the default project for all commands. The project is verified before saving.
+
+```bash
+lark config set-project my-game
+```
+
+### `lark config show`
+
+Show current configuration.
+
+```bash
+lark config show
+# Default project: my-game
+```
+
+## Projects
+
+### `lark projects list`
+
+List all your projects.
+
+```bash
+lark projects list
+```
+
+### `lark projects create <name>`
+
+Create a new project. The name is converted to a DNS-compatible project ID automatically.
+
+```bash
+lark projects create "My Game"
+# Created project: my-game
+```
+
+### `lark projects show [id]`
+
+Show project details including settings, secret key, and database counts. Uses the default project if `id` is omitted.
+
+```bash
+lark projects show
+```
+
+| Flag | Description |
+|---|---|
+| `--project <id>` | Override the default project. |
+
+### `lark projects update [id]`
+
+Update project settings. At least one setting flag is required.
+
+```bash
+lark projects update --auto-create true --ephemeral false
+```
+
+| Flag | Description |
+|---|---|
+| `--name <name>` | Project name. |
+| `--ephemeral <bool>` | Enable/disable ephemeral mode. |
+| `--auto-create <bool>` | Enable/disable auto-create databases. |
+| `--firebase-compat <bool>` | Enable/disable Firebase compatibility. |
+| `--firebase-project-id <id>` | Firebase project ID for auth token validation. |
+| `--project <id>` | Override the default project. |
+
+### `lark projects delete [id]`
+
+Delete a project and all its databases. This is irreversible.
+
+```bash
+lark projects delete --confirm my-game
+```
+
+| Flag | Description |
+|---|---|
+| `--confirm <id>` | **Required.** Pass the project ID to confirm deletion. |
+| `--project <id>` | Override the default project. |
+
+### `lark projects regenerate-secret [id]`
+
+Regenerate the project secret key. The old key is immediately invalidated.
+
+```bash
+lark projects regenerate-secret
+```
+
+| Flag | Description |
+|---|---|
+| `--project <id>` | Override the default project. |
+
+## Databases
+
+`lark databases` can be shortened to `lark db`.
+
+### `lark db list`
+
+List databases in the current project.
+
+```bash
+lark db list
+lark db list --search game --limit 10
+```
+
+| Flag | Description |
+|---|---|
+| `--search <query>` | Filter databases by ID. |
+| `--limit <n>` | Max results (default: 50). |
+| `--offset <n>` | Number of results to skip (default: 0). |
+| `--project <id>` | Override the default project. |
+
+### `lark db create <id>`
+
+Create a new database.
+
+```bash
+lark db create game-state
+```
+
+| Flag | Description |
+|---|---|
+| `--project <id>` | Override the default project. |
+
+### `lark db delete <id>`
+
+Delete a database and all its data. This is irreversible.
+
+```bash
+lark db delete game-state
+```
+
+| Flag | Description |
+|---|---|
+| `--project <id>` | Override the default project. |
+
+## Data
+
+All data commands require a database ID and most require a path. Paths start with `/`.
+
+### `lark data get <database> <path>`
+
+Read data at a path.
+
+```bash
+lark data get game-state /players/alice
+# {"name": "Alice", "score": 42}
+```
+
+| Flag | Description |
+|---|---|
+| `--project <id>` | Override the default project. |
+
+### `lark data set <database> <path> <value>`
+
+Overwrite data at a path. Use `-` as the value to read from stdin.
+
+```bash
+lark data set game-state /players/alice '{"name": "Alice", "score": 0}'
+
+# From stdin
+cat alice.json | lark data set game-state /players/alice -
+```
+
+| Flag | Description |
+|---|---|
+| `--project <id>` | Override the default project. |
+
+### `lark data update <database> <path> <value>`
+
+Shallow merge data at a path. Existing keys not in the payload are preserved. Use `-` for stdin.
+
+```bash
+lark data update game-state /players/alice '{"score": 99}'
+```
+
+| Flag | Description |
+|---|---|
+| `--project <id>` | Override the default project. |
+
+### `lark data push <database> <path> <value>`
+
+Push data with an auto-generated key. Returns the generated key. Use `-` for stdin.
+
+```bash
+lark data push game-state /messages '{"text": "Hello!", "sender": "alice"}'
+# -Nabc123def
+```
+
+| Flag | Description |
+|---|---|
+| `--project <id>` | Override the default project. |
+
+### `lark data delete <database> <path>`
+
+Delete data at a path.
+
+```bash
+lark data delete game-state /players/alice
+```
+
+| Flag | Description |
+|---|---|
+| `--project <id>` | Override the default project. |
+
+### `lark data export <database> [path]`
+
+Export data as JSON. Path defaults to `/` (entire database).
+
+```bash
+# Export entire database to a file
+lark data export game-state -o backup.json
+
+# Export a subtree to stdout
+lark data export game-state /players
+```
+
+| Flag | Description |
+|---|---|
+| `-o, --output <file>` | Write to a file instead of stdout. |
+| `--project <id>` | Override the default project. |
+
+### `lark data import <database> [path]`
+
+Import data from a JSON file. Path defaults to `/`. This overwrites data at the target path.
+
+```bash
+lark data import game-state -f backup.json
+lark data import game-state /players -f players.json
+```
+
+| Flag | Description |
+|---|---|
+| `-f, --file <file>` | **Required.** JSON file to import. |
+| `--project <id>` | Override the default project. |
+
+<Warning>
+Import overwrites all data at the target path. If you import to `/`, the entire database is replaced.
+</Warning>
+
+### `lark data watch <database> <path>`
+
+Stream real-time changes as Server-Sent Events. Press `Ctrl+C` to stop.
+
+```bash
+lark data watch game-state /players
+```
+
+Output:
+
+```
+[put] {"path":"/","data":{"alice":{"name":"Alice","score":42}}}
+[patch] {"path":"/alice/score","data":99}
+```
+
+With `--json`, outputs newline-delimited JSON (one object per line):
+
+```bash
+lark data watch game-state /players --json
+```
+
+```json
+{"event":"put","data":{"path":"/","data":{"alice":{"name":"Alice","score":42}}}}
+{"event":"patch","data":{"path":"/alice/score","data":99}}
+```
+
+| Flag | Description |
+|---|---|
+| `--project <id>` | Override the default project. |
+
+## Security rules
+
+### `lark rules get [id]`
+
+Get the current security rules for a project. Uses the default project if `id` is omitted.
+
+```bash
+lark rules get
+```
+
+| Flag | Description |
+|---|---|
+| `--project <id>` | Override the default project. |
+
+### `lark rules set [id]`
+
+Set security rules from a file or stdin. Supports JSON5 (comments and trailing commas). Uses the default project if `id` is omitted.
+
+```bash
+# From a file
+lark rules set -f rules.json
+
+# From stdin
+cat rules.json | lark rules set
+```
+
+| Flag | Description |
+|---|---|
+| `-f, --file <file>` | Rules file to upload. |
+| `--project <id>` | Override the default project. |
+
+## Monitoring
+
+### `lark dashboard [id]`
+
+Show project metrics. Uses the default project if `id` is omitted. Defaults to the last 24 hours.
+
+```bash
+lark dashboard
+lark dashboard --start 2026-02-01 --end 2026-02-15
+```
+
+Displays:
+- **Current**: CCU, peak CCU, bytes in/out, reads/writes, permission denials
+- **Summary**: Peak CCU, total bandwidth, total operations, average latency
+- **Recent events**: Last 10 events
+
+| Flag | Description |
+|---|---|
+| `--start <date>` | Start date (ISO format). |
+| `--end <date>` | End date (ISO format). |
+| `--project <id>` | Override the default project. |
+
+### `lark events [id]`
+
+Show project events (connections, errors, warnings). Uses the default project if `id` is omitted.
+
+```bash
+lark events
+lark events --limit 50
+```
+
+| Flag | Description |
+|---|---|
+| `--limit <n>` | Max results (default: 25). |
+| `--offset <n>` | Number of results to skip (default: 0). |
+| `--project <id>` | Override the default project. |
+
+### `lark billing [id]`
+
+Show billing information. Uses the default project if `id` is omitted. Defaults to the current billing period.
+
+```bash
+lark billing
+lark billing --period 2026-01
+```
+
+Displays: period start, peak CCU, total bandwidth, total storage.
+
+| Flag | Description |
+|---|---|
+| `--period <month>` | Billing period in `YYYY-MM` format. |
+| `--project <id>` | Override the default project. |
+
+## Global flags
+
+These flags work with every command:
+
+| Flag | Description |
+|---|---|
+| `--json` | Output results as machine-readable JSON. |
+| `--project <id>` | Override the default project for this command. |
+
+## Configuration file
+
+The CLI stores its configuration in `~/.lark/config.json`. This file is created automatically when you run `lark login` and contains your session token and default project setting.
+
+```bash
+# View your config
+lark config show
+
+# Set default project
+lark config set-project my-game
+```
+
+You generally don't need to edit this file directly.
