@@ -80,6 +80,31 @@ unsubscribe();
 await db.disconnect();
 ```
 
+## Developer tools
+
+### Lark CLI
+
+The [Lark CLI](/cli/overview) lets you manage projects, databases, data, and security rules from the terminal:
+
+```bash
+npm install -g @lark-sh/cli
+lark login
+lark config set-project your-project-id
+```
+
+Once set up, you can read and write data, export and import databases, deploy security rules, and monitor your project — all without leaving the terminal. See the [CLI overview](/cli/overview) for common workflows.
+
+### Claude Code plugin
+
+If you use [Claude Code](https://docs.anthropic.com/en/docs/claude-code), install the Lark plugin so Claude has full context on the Lark platform:
+
+```bash
+/plugin marketplace add lark-sh/lark-skill
+/plugin install lark@lark-tools
+```
+
+Use `/lark` in any conversation to activate it, or Claude will load it automatically when you're working with Lark. See the [Claude Code plugin](/cli/claude-code) page for details.
+
 ## What's next?
 
 <CardGroup cols={2}>
