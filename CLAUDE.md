@@ -155,6 +155,30 @@ The Firebase section (Section 3) is where we explicitly discuss Firebase compati
 - Constant Firebase references outside of Section 3 — don't say "hasChildren() (like Firebase)" or "Lark's security rules work just like Firebase's". Lark is Lark.
 - Being snarky about competitors outside of where it's natural and warranted
 
+### AI writing tropes to avoid
+
+See `TROPES.md` for the full reference with examples. These are the rules — follow them strictly when writing docs:
+
+- **No magic adverbs**: Don't lean on "quietly", "deeply", "fundamentally", "remarkably" to manufacture significance.
+- **No "delve" family**: Avoid "delve", "leverage" (as verb), "robust", "streamline", "harness", "utilize".
+- **No pompous substitutions**: Use "is" instead of "serves as", "stands as", "represents", "marks".
+- **No "It's not X — it's Y"**: The negative parallelism reframe. One per page max, zero is better.
+- **No self-answered rhetorical questions**: "The result? Devastating." — don't do this.
+- **No anaphora/tricolon abuse**: Don't repeat the same sentence structure 3+ times in a row.
+- **No gerund fragment litanies**: "Fixing bugs. Writing features. Shipping code." — these add nothing.
+- **No filler transitions**: "It's worth noting", "Importantly", "Interestingly", "Notably" — cut them.
+- **No false suspense**: "Here's the kicker", "Here's the thing", "Here's where it gets interesting".
+- **No patronizing analogies**: "Think of it as...", "It's like a..." — trust the reader to understand technical concepts directly.
+- **No "Imagine a world where..."** futurism pitches.
+- **No "Let's break this down"**: Also "Let's unpack this", "Let's explore", "Let's dive in". Don't narrate what you're about to do.
+- **No stakes inflation**: Not everything is "fundamentally reshaping" anything. Keep claims proportional.
+- **No em-dash addiction**: 2-3 per page is fine. 10+ is a pattern problem.
+- **No bold-first bullets**: Don't start every list item with a bolded keyword. (API reference pages are an exception where structured formatting is expected.)
+- **No fractal summaries**: Don't intro-summarize-conclude every section. Say it once.
+- **No signposted conclusions**: "In conclusion", "To sum up", "In summary" — the reader knows it's the end.
+- **No dead metaphors**: Don't repeat the same metaphor across an entire page.
+- **No historical analogy stacking**: "Apple didn't build X. Facebook didn't build Y." — skip the parade of company names to make a point.
+
 ### Formatting conventions
 
 - Sentence case for headings
