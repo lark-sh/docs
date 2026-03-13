@@ -78,6 +78,46 @@
         ]
       },
       {
+        "tab": "Lark SDK",
+        "groups": [
+          {
+            "group": "Getting started",
+            "pages": [
+              "lark-sdk/overview",
+              "lark-sdk/quickstart"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "lark-sdk/connecting",
+              "lark-sdk/references",
+              "lark-sdk/writing",
+              "lark-sdk/reading",
+              "lark-sdk/subscriptions",
+              "lark-sdk/queries",
+              "lark-sdk/transactions",
+              "lark-sdk/auth",
+              "lark-sdk/offline",
+              "lark-sdk/ondisconnect",
+              "lark-sdk/errors",
+              "lark-sdk/fb-v8"
+            ]
+          },
+          {
+            "group": "API reference",
+            "pages": [
+              "lark-sdk/api/lark-database",
+              "lark-sdk/api/database-reference",
+              "lark-sdk/api/data-snapshot",
+              "lark-sdk/api/ondisconnect",
+              "lark-sdk/api/lark-error",
+              "lark-sdk/api/utilities"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Firebase SDKs",
         "groups": [
           {
@@ -114,46 +154,6 @@
               "rest-api/writing",
               "rest-api/streaming",
               "rest-api/conditional"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Lark SDK",
-        "groups": [
-          {
-            "group": "Getting started",
-            "pages": [
-              "lark-sdk/overview",
-              "lark-sdk/quickstart"
-            ]
-          },
-          {
-            "group": "Guides",
-            "pages": [
-              "lark-sdk/connecting",
-              "lark-sdk/references",
-              "lark-sdk/writing",
-              "lark-sdk/reading",
-              "lark-sdk/subscriptions",
-              "lark-sdk/queries",
-              "lark-sdk/transactions",
-              "lark-sdk/auth",
-              "lark-sdk/offline",
-              "lark-sdk/ondisconnect",
-              "lark-sdk/errors",
-              "lark-sdk/fb-v8"
-            ]
-          },
-          {
-            "group": "API reference",
-            "pages": [
-              "lark-sdk/api/lark-database",
-              "lark-sdk/api/database-reference",
-              "lark-sdk/api/data-snapshot",
-              "lark-sdk/api/ondisconnect",
-              "lark-sdk/api/lark-error",
-              "lark-sdk/api/utilities"
             ]
           }
         ]
