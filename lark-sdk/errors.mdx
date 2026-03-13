@@ -103,7 +103,7 @@ try {
 
 ## Connection-level errors
 
-For errors that aren't tied to a specific operation — transport failures, authentication errors, protocol issues — use `db.onError()`:
+For errors that aren't tied to a specific operation (transport failures, authentication errors, protocol issues), use `db.onError()`:
 
 ```typescript
 db.onError((error) => {
@@ -130,10 +130,10 @@ unsubscribe();
 ## Best practices
 
 <Tip>
-Always handle `permission_denied` errors in your UI. They usually mean a user is trying to access data they shouldn't — either a bug in your security rules or a user navigating somewhere unexpected.
+Always handle `permission_denied` errors in your UI. They usually mean a user is trying to access data they shouldn't, either a bug in your security rules or a user navigating somewhere unexpected.
 </Tip>
 
-- **Wrap writes in try/catch.** Even if you're confident your security rules will allow the write, network issues or data validation can cause failures.
-- **Log errors with their codes.** The `code` field is stable and machine-readable. Use it for programmatic decisions. Use `message` for human-readable logging.
-- **Use `db.onError()` as a safety net.** It catches connection-level issues that individual operation error handling might miss.
-- **Don't swallow errors silently.** At minimum, log them. Silently dropped errors make debugging much harder.
+- Wrap writes in try/catch. Even if you're confident your security rules will allow the write, network issues or data validation can cause failures.
+- Log errors with their codes. The `code` field is stable and machine-readable. Use it for programmatic decisions. Use `message` for human-readable logging.
+- Use `db.onError()` as a safety net. It catches connection-level issues that individual operation error handling might miss.
+- Don't swallow errors silently. At minimum, log them. Silently dropped errors make debugging much harder.

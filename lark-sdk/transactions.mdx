@@ -73,12 +73,12 @@ try {
 ```
 
 <Note>
-Your update function may be called **multiple times** if there are concurrent writes. Make sure it has no side effects — don't make network requests, modify external state, or log analytics inside it.
+Your update function may be called **multiple times** if there are concurrent writes. Make sure it has no side effects. Don't make network requests, modify external state, or log analytics inside it.
 </Note>
 
 ## Multi-path transactions
 
-When you need to update multiple paths atomically — either all the changes happen, or none of them do.
+When you need to update multiple paths atomically, either all the changes happen or none of them do.
 
 ### Object syntax
 
@@ -203,5 +203,5 @@ await db.transaction([
 ```
 
 <Warning>
-Avoid running transactions on paths with very high write contention from many clients simultaneously. If you're hitting the retry limit frequently, consider restructuring your data to reduce contention — for example, by sharding counters across multiple paths.
+Avoid running transactions on paths with very high write contention from many clients simultaneously. If you're hitting the retry limit frequently, consider restructuring your data to reduce contention. For example, you could shard counters across multiple paths.
 </Warning>

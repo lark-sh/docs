@@ -5,7 +5,7 @@ description: "Manage your Lark projects, databases, and data from the terminal"
 
 # Lark CLI
 
-The Lark CLI (`@lark-sh/cli`) gives you full control over your projects, databases, security rules, and data from the terminal. Anything you can do in the dashboard, you can do from the command line — plus data operations like export, import, and real-time streaming.
+The Lark CLI (`@lark-sh/cli`) gives you full control over your projects, databases, security rules, and data from the terminal. Anything you can do in the dashboard, you can do from the command line, plus data operations like export, import, and real-time streaming.
 
 ## Installation
 
@@ -78,7 +78,7 @@ lark data delete game-state /players/alice
 
 ### Pipe data from stdin
 
-Use `-` as the value to read from stdin — useful for large payloads or scripting:
+Use `-` as the value to read from stdin. This is useful for large payloads or scripting:
 
 ```bash
 cat player-data.json | lark data set game-state /players -

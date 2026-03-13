@@ -37,7 +37,7 @@ data: {"path":"/carol","data":{"name":"Carol","score":0}}
 | `put` | Data at the path was replaced. The initial event is always a `put` with the full value at the subscribed path. |
 | `patch` | Data was partially updated. Only the changed fields are included. |
 | `keep-alive` | Sent periodically to keep the connection open. No data payload. |
-| `cancel` | The stream was terminated — typically because security rules revoked read access. |
+| `cancel` | The stream was terminated, typically because security rules revoked read access. |
 | `auth_revoked` | The auth token expired or was invalidated. |
 
 ### Initial data
@@ -55,9 +55,9 @@ After that, you receive incremental `put` and `patch` events as data changes.
 
 The `path` field in each event is relative to the path you subscribed to. If you stream `/players`:
 
-- `{"path":"/","data":{...}}` — The entire `/players` subtree changed.
-- `{"path":"/alice/score","data":300}` — Only `/players/alice/score` changed.
-- `{"path":"/carol","data":{"name":"Carol","score":0}}` — A new child `/players/carol` was added.
+- `{"path":"/","data":{...}}` means the entire `/players` subtree changed.
+- `{"path":"/alice/score","data":300}` means only `/players/alice/score` changed.
+- `{"path":"/carol","data":{"name":"Carol","score":0}}` means a new child `/players/carol` was added.
 
 ## Using SSE in code
 
@@ -110,8 +110,8 @@ while (true) {
 
 SSE streaming is useful when you need real-time updates but can't use a WebSocket-based SDK:
 
-- **Server-side listeners** — Watch for changes from a backend service.
-- **Monitoring and logging** — Stream events to a log pipeline.
-- **Simple web clients** — `EventSource` is built into every browser with no dependencies.
+- Watching for changes from a backend service.
+- Streaming events to a log or monitoring pipeline.
+- Simple web clients where `EventSource` (built into every browser, no dependencies) is enough.
 
 For most client-side applications, the [Lark SDK](/lark-sdk/overview) or [Firebase SDKs](/firebase/overview) provide a better developer experience with automatic reconnection, local caching, and typed snapshots.

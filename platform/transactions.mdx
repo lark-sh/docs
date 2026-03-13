@@ -29,7 +29,7 @@ Here's what happens under the hood:
 5. Your function is called again with the updated value.
 6. This repeats until the write succeeds or the retry limit is reached (25 attempts).
 
-Your transaction function may be called multiple times. It should be a **pure function** — no side effects, no network requests, no UI updates. Just compute a new value from the current value.
+Your transaction function may be called multiple times. It should be a **pure function**: no side effects, no network requests, no UI updates. Just compute a new value from the current value.
 
 Return `undefined` from your function to abort the transaction without writing anything.
 
@@ -41,10 +41,10 @@ This means your subscriptions fire immediately with the optimistic value, then p
 
 ## Multi-path transactions
 
-Sometimes you need to update multiple paths atomically — either all the changes happen, or none of them do. Multi-path transactions support two syntaxes:
+Sometimes you need to update multiple paths atomically, where either all the changes happen or none of them do. Multi-path transactions support two syntaxes:
 
-- **Object syntax** — Pass an object where keys are paths and values are what to write. Simple and concise for straightforward atomic writes.
-- **Array syntax** — Pass an array of operations for more control, including the ability to add conditions.
+- **Object syntax**: Pass an object where keys are paths and values are what to write. Simple and concise for straightforward atomic writes.
+- **Array syntax**: Pass an array of operations for more control, including the ability to add conditions.
 
 ## Conditions (compare-and-swap)
 

@@ -9,9 +9,9 @@ Security rules are the gatekeepers of your Lark database. They're declarative JS
 
 You define rules as a JSON object that mirrors the shape of your database. At each path, you can attach three rule types:
 
-- **`.read`** — Can this client read data at this path?
-- **`.write`** — Can this client write data at this path?
-- **`.validate`** — Is the incoming data valid?
+- `.read`: Can this client read data at this path?
+- `.write`: Can this client write data at this path?
+- `.validate`: Is the incoming data valid?
 
 Access is **denied by default**. If no `.read` or `.write` rule is specified at or above a path, the operation is rejected.
 
@@ -34,7 +34,7 @@ In this example, anyone can read any player's data, but only the player themselv
 
 ## Cascading rules
 
-`.read` and `.write` rules **cascade downward**. If you grant `.read` at `/users`, every child path under `/users` is also readable. A rule at a parent node overrides any restrictive rule on a child — once access is granted, it can't be taken away deeper in the tree.
+`.read` and `.write` rules **cascade downward**. If you grant `.read` at `/users`, every child path under `/users` is also readable. A rule at a parent node overrides any restrictive rule on a child. Once access is granted, it can't be taken away deeper in the tree.
 
 ```json
 {
@@ -49,7 +49,7 @@ In this example, anyone can read any player's data, but only the player themselv
 }
 ```
 
-Here, the `.read: false` on `/foo/bar` has no effect. If `/foo/baz` is `true`, the parent rule grants read access to all of `/foo` — including `/foo/bar`. Child rules can only grant additional privileges, never revoke them.
+Here, the `.read: false` on `/foo/bar` has no effect. If `/foo/baz` is `true`, the parent rule grants read access to all of `/foo`, including `/foo/bar`. Child rules can only grant additional privileges, never revoke them.
 
 <Warning>
 Be intentional about where you place `.read` and `.write` rules. A permissive rule high in the tree grants access to everything below it.
@@ -59,7 +59,7 @@ Be intentional about where you place `.read` and `.write` rules. A permissive ru
 
 ## Rules are not filters
 
-Rules are evaluated atomically. A read operation fails entirely if there isn't a rule at that location (or a parent) that grants access — even if every individual child is accessible.
+Rules are evaluated atomically. A read operation fails entirely if there isn't a rule at that location (or a parent) that grants access, even if every individual child is accessible.
 
 ```json
 {
@@ -98,10 +98,10 @@ Use `$wildcard` path segments to match any child key. The matched value becomes 
 }
 ```
 
-Here, `$roomId` matches any room key and `$messageId` matches any message key. You can reference these variables in expressions — for example, `"auth.uid === $roomId"` to restrict access to the room owner.
+Here, `$roomId` matches any room key and `$messageId` matches any message key. You can reference these variables in expressions, for example `"auth.uid === $roomId"` to restrict access to the room owner.
 
 <Note>
-Wildcard captures are always strings — even if the key looks like a number. Comparing `$key` to a number directly will always fail. Convert the number to a string first: `$key === newData.val() + ''`.
+Wildcard captures are always strings, even if the key looks like a number. Comparing `$key` to a number directly will always fail. Convert the number to a string first: `$key === newData.val() + ''`.
 </Note>
 
 ### Restricting allowed children
@@ -147,7 +147,7 @@ Reads to `message1` are denied because the specific `message1` rule evaluates to
 
 ## Volatile path restrictions
 
-[Volatile paths](/platform/volatile) support `.read`, `.write`, and `.validate` rules, but those rules cannot reference `data` or `root` — reading existing database state is incompatible with the volatile fast path. If a rule on a volatile path contains `data.*` or `root.*`, it evaluates to `false`. See [volatile paths](/platform/volatile#rules-restrictions-on-volatile-paths) for the full list of what's allowed.
+[Volatile paths](/platform/volatile) support `.read`, `.write`, and `.validate` rules, but those rules cannot reference `data` or `root`. Reading existing database state is incompatible with the volatile fast path. If a rule on a volatile path contains `data.*` or `root.*`, it evaluates to `false`. See [volatile paths](/platform/volatile#rules-restrictions-on-volatile-paths) for the full list of what's allowed.
 
 ## Editing rules
 
@@ -164,6 +164,6 @@ Start with restrictive rules and open access only where you need it.
     Full reference for every variable, method, and operator available in rule expressions.
   </Card>
   <Card title="Rules examples" icon="code" href="/platform/rules-examples">
-    Copy-paste patterns for common scenarios — user-owned data, role-based access, write-once data, and more.
+    Copy-paste patterns for common scenarios: user-owned data, role-based access, write-once data, and more.
   </Card>
 </CardGroup>

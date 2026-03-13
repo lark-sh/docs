@@ -9,8 +9,8 @@ Everything in Lark is a JSON tree. Your entire database is one big nested JSON o
 
 Your data is organized into two levels:
 
-- **Project** — A container for your app. You create projects in the [dashboard](https://dashboard.lark.sh). Each project has a unique ID, security rules, and connection settings.
-- **Database** — A single JSON tree inside a project. A project can have many databases. You might use one database per game room, per user session, or just one for your whole app.
+- **Project**: A container for your app. You create projects in the [dashboard](https://dashboard.lark.sh). Each project has a unique ID, security rules, and connection settings.
+- **Database**: A single JSON tree inside a project. A project can have many databases. You might use one database per game room, per user session, or just one for your whole app.
 
 When you connect, you specify both:
 
@@ -57,7 +57,7 @@ Paths are forward-slash separated strings. Each segment between slashes is a key
 | `/players/alice/score` | The number `250` |
 | `/settings/maxPlayers` | The number `10` |
 
-Paths always start from the root. There's no concept of a "relative" path in the database itself — though SDKs let you navigate from one reference to another using methods like `child()` and `parent`.
+Paths always start from the root. There's no concept of a "relative" path in the database itself, though SDKs let you navigate from one reference to another using methods like `child()` and `parent`.
 
 ## Keys
 
@@ -76,7 +76,7 @@ Key validation is strict. If you try to write data with an invalid key, the writ
 
 ## References
 
-A reference is a pointer to a specific path in your database. You don't read or write data directly — you create a reference to a path, then perform operations on it.
+A reference is a pointer to a specific path in your database. You don't read or write data directly. Instead, you create a reference to a path, then perform operations on it.
 
 ```typescript
 // Create a reference to /players/alice
@@ -95,7 +95,7 @@ aliceRef.on('value', (snapshot) => {
 });
 ```
 
-References are lightweight. Creating one doesn't fetch data or open a connection — it just records which path you want to interact with.
+References are lightweight. Creating one doesn't fetch data or open a connection; it just records which path you want to interact with.
 
 You can navigate from one reference to another:
 
@@ -109,12 +109,12 @@ console.log(scoreRef.path); // 'players/alice/score'
 
 ## Schemaless by design
 
-Lark doesn't enforce a schema. You write JSON, Lark stores it. Any valid JSON value — strings, numbers, booleans, objects, or null — can live at any path.
+Lark doesn't enforce a schema. You write JSON, Lark stores it. Any valid JSON value (strings, numbers, booleans, objects, or null) can live at any path.
 
 This makes it fast to prototype and iterate. You don't need to define tables, run migrations, or update schemas. Just write the data you need, where you need it.
 
 <Tip>
-Just because Lark is schemaless doesn't mean your data should be chaotic. Use [security rules](/platform/security-rules) with `.validate` to enforce structure on writes — required fields, type checking, value ranges. You get the flexibility of schemaless storage with the safety of validation.
+Just because Lark is schemaless doesn't mean your data should be chaotic. Use [security rules](/platform/security-rules) with `.validate` to enforce structure on writes: required fields, type checking, value ranges. You get the flexibility of schemaless storage with the safety of validation.
 </Tip>
 
 ## What's next

@@ -5,11 +5,11 @@ description: "Set, update, remove, and push data with the Lark SDK"
 
 # Writing data
 
-The Lark SDK gives you several ways to write data. All write operations are **optimistic** — your local state updates immediately, and the write is sent to the server in the background. If the server rejects it (due to security rules, for example), the local state rolls back.
+The Lark SDK gives you several ways to write data. All write operations are **optimistic**: your local state updates immediately, and the write is sent to the server in the background. If the server rejects it (due to security rules, for example), the local state rolls back.
 
 ## `set(value)`
 
-Overwrites the data at a reference. Any existing data at that location — including all children — is replaced.
+Overwrites the data at a reference. Any existing data at that location, including all children, is replaced.
 
 ```typescript
 import { LarkDatabase } from "@lark-sh/client";
@@ -36,7 +36,7 @@ await db.ref("users/alice").set(null);
 
 ## `update(values)`
 
-Performs a shallow merge at the reference location. Only the specified keys are written — other existing keys are left untouched.
+Performs a shallow merge at the reference location. Only the specified keys are written. Other existing keys are left untouched.
 
 ```typescript
 // Only updates "score" and "level", leaves "name" unchanged
@@ -143,7 +143,7 @@ await db.ref("users/alice").update({
 ```
 
 <Note>
-`ServerValue.TIMESTAMP` is evaluated on the server, so it reflects the server's clock — not the client's. This is important for consistency across clients in different time zones or with inaccurate local clocks.
+`ServerValue.TIMESTAMP` is evaluated on the server, so it reflects the server's clock, not the client's. This is important for consistency across clients in different time zones or with inaccurate local clocks.
 </Note>
 
 ## Write guarantees

@@ -5,7 +5,7 @@ description: "Sort, filter, and paginate data with chainable queries"
 
 # Queries
 
-Queries let you sort, filter, and limit the data returned from a reference. All query methods are chainable and return a new query — they don't modify the original reference.
+Queries let you sort, filter, and limit the data returned from a reference. All query methods are chainable and return a new query. They don't modify the original reference.
 
 ## Ordering
 
@@ -144,7 +144,7 @@ The optional `key` parameter in range methods is used to disambiguate when multi
 
 ## Query identifier
 
-Each query has a `queryIdentifier` property — a string that uniquely identifies the combination of ordering, limits, and ranges. This is useful for deduplication or caching:
+Each query has a `queryIdentifier` property, a string that uniquely identifies the combination of ordering, limits, and ranges. This is useful for deduplication or caching:
 
 ```typescript
 const query = db.ref("players")
@@ -157,7 +157,7 @@ console.log(query.queryIdentifier);
 
 ## Using queries with subscriptions
 
-Queries work with both `once()` and `on()`. This is where they really shine — you can subscribe to a filtered, sorted slice of your data in real time.
+Queries work with both `once()` and `on()`. This is where they really shine: you can subscribe to a filtered, sorted slice of your data in real time.
 
 ```typescript
 // Subscribe to top 10 players, updated live

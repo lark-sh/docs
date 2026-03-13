@@ -3,7 +3,7 @@ title: "Conditional requests"
 description: "Use ETags for compare-and-swap writes"
 ---
 
-Lark supports conditional writes using ETags. This gives you compare-and-swap (CAS) semantics over HTTP — write only if the data hasn't changed since you last read it.
+Lark supports conditional writes using ETags. This gives you compare-and-swap (CAS) semantics over HTTP: write only if the data hasn't changed since you last read it.
 
 ## How it works
 
@@ -112,8 +112,8 @@ async function incrementScore(projectUrl: string, path: string, token: string) {
 
 Conditional writes are useful for:
 
-- **Counters and balances** — Increment a value without risking double-counts.
-- **Optimistic locking** — Let a user edit data and reject stale writes.
-- **Server-side updates** — Backend services that read-modify-write without holding a persistent connection.
+- Incrementing counters and balances without risking double-counts.
+- Optimistic locking: let a user edit data and reject stale writes.
+- Server-side read-modify-write operations without holding a persistent connection.
 
 For client-side compare-and-swap, [transactions](/platform/transactions) in the Lark SDK provide a more ergonomic API with automatic retries.

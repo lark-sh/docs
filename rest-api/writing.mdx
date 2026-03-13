@@ -25,7 +25,7 @@ Response (echoes the written data):
 }
 ```
 
-`PUT` to a path that doesn't exist creates it. `PUT` to a path that does exist replaces it entirely — missing fields are deleted, not preserved.
+`PUT` to a path that doesn't exist creates it. `PUT` to a path that does exist replaces it entirely. Missing fields are deleted, not preserved.
 
 ## Push (POST)
 
@@ -45,13 +45,13 @@ Response:
 }
 ```
 
-The `name` field contains the generated key. Push IDs are chronologically sortable — later posts sort after earlier ones.
+The `name` field contains the generated key. Push IDs are chronologically sortable, so later posts sort after earlier ones.
 
 <Tip>Use `POST` for append-only data like chat messages, event logs, or queue items where each entry needs a unique key.</Tip>
 
 ## Update (PATCH)
 
-Merge data into an existing path. Only the specified keys are modified — everything else is preserved.
+Merge data into an existing path. Only the specified keys are modified; everything else is preserved.
 
 ```bash
 curl -X PATCH \
@@ -76,7 +76,7 @@ curl -X PATCH \
   }'
 ```
 
-All four updates happen atomically — either they all succeed or none do. Multi-path updates are the way to keep denormalized data consistent.
+All four updates happen atomically. Either they all succeed or none do. Multi-path updates are the way to keep denormalized data consistent.
 
 ## Remove (DELETE)
 

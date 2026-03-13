@@ -1,6 +1,6 @@
 ---
 title: "REST API"
-description: "Read and write data over HTTP — no SDK required"
+description: "Read and write data over HTTP, no SDK required"
 ---
 
 Lark exposes a REST API for reading and writing data over plain HTTP. If you're working from a server, a script, a CLI tool, or any environment where you don't want to maintain a persistent connection, the REST API is the way to go.
@@ -45,7 +45,7 @@ Pass an auth token as a query parameter:
 GET https://chess-app.larkdb.net/my-game/players.json?auth=YOUR_TOKEN
 ```
 
-The `auth` parameter accepts any token that Lark supports — [Lark tokens](/platform/authentication) (HS256 JWTs signed with your secret key) or [Firebase Auth tokens](/firebase/auth).
+The `auth` parameter accepts any token that Lark supports: [Lark tokens](/platform/authentication) (HS256 JWTs signed with your secret key) or [Firebase Auth tokens](/firebase/auth).
 
 You can also use `access_token` as an alias:
 
@@ -67,11 +67,11 @@ If you omit the token, the request is treated as anonymous. Your [security rules
 
 ## When to use the REST API
 
-- **Server-side operations** — Read or write data from your backend without maintaining a WebSocket connection.
-- **One-off scripts** — Import data, seed a database, or run migrations.
-- **Webhooks and integrations** — Receive a webhook, write to Lark with a single HTTP call.
-- **Environments without WebSocket support** — Edge functions, serverless workers, or constrained runtimes.
-- **Debugging** — Quick reads with `curl` to inspect your data.
+- Reading or writing data from your backend without maintaining a WebSocket connection.
+- One-off scripts to import data, seed a database, or run migrations.
+- Receiving a webhook and writing to Lark with a single HTTP call.
+- Edge functions, serverless workers, or other runtimes without WebSocket support.
+- Quick reads with `curl` to inspect your data.
 
 For real-time subscriptions and persistent connections, use the [Lark SDK](/lark-sdk/overview) or [Firebase SDKs](/firebase/overview) instead.
 

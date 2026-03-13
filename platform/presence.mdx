@@ -7,26 +7,26 @@ Knowing when users are online and offline is essential for multiplayer games, co
 
 ## OnDisconnect
 
-OnDisconnect lets you register operations that run on the server the moment a client disconnects. You set them up while connected, and the server holds onto them. When the connection drops — whether the user closes the tab, the network fails, or the device crashes — the server executes them immediately.
+OnDisconnect lets you register operations that run on the server the moment a client disconnects. You set them up while connected, and the server holds onto them. When the connection drops (whether the user closes the tab, the network fails, or the device crashes), the server executes them immediately.
 
 ### Available operations
 
 OnDisconnect supports the same write operations you use elsewhere:
 
-- **set** — Overwrite the data at the path.
-- **update** — Merge values into the existing data.
-- **remove** — Delete the data at the path.
-- **cancel** — Cancel any previously queued OnDisconnect operations for this path.
+- `set`: Overwrite the data at the path.
+- `update`: Merge values into the existing data.
+- `remove`: Delete the data at the path.
+- `cancel`: Cancel any previously queued OnDisconnect operations for this path.
 
 <Note>
-OnDisconnect operations survive brief network interruptions. The server only executes them when it confirms the connection is truly gone — not on every momentary blip. If the client reconnects before the server times out the connection, the disconnect operations remain queued and are not fired.
+OnDisconnect operations survive brief network interruptions. The server only executes them when it confirms the connection is truly gone, not on every momentary blip. If the client reconnects before the server times out the connection, the disconnect operations remain queued and are not fired.
 </Note>
 
 ## `.info/connected`
 
 Lark provides a special read-only path, `.info/connected`, that tells you whether the client is currently connected to the server. It's `true` when connected and `false` when disconnected.
 
-Subscribe to it to show a connection indicator in your UI — a banner, an icon, a "reconnecting..." message.
+Subscribe to it to show a connection indicator in your UI, like a banner or "reconnecting..." message.
 
 ## Building a presence system
 
@@ -35,7 +35,7 @@ The classic pattern for presence combines OnDisconnect, `.info/connected`, and r
 1. Subscribe to `.info/connected`.
 2. When the connection is established (or re-established), register an OnDisconnect to set the user offline and write a `lastSeen` timestamp.
 3. Once the OnDisconnect is confirmed queued on the server, set the user online.
-4. If the connection drops, the server executes the OnDisconnect — setting the user offline.
+4. If the connection drops, the server executes the OnDisconnect, setting the user offline.
 5. When the client reconnects, the cycle repeats.
 
 <Tip>
@@ -44,7 +44,7 @@ The order matters. Always register your OnDisconnect **before** setting the onli
 
 ### Multiple connections per user
 
-OnDisconnect operations are tied to a specific connection. If a user opens your app in two tabs, each tab has its own connection and its own OnDisconnect handlers. Closing one tab fires that tab's disconnect operations — potentially setting the user offline while they're still active in the other tab. Design your presence data model to handle this if needed (for example, by tracking connection count instead of a boolean).
+OnDisconnect operations are tied to a specific connection. If a user opens your app in two tabs, each tab has its own connection and its own OnDisconnect handlers. Closing one tab fires that tab's disconnect operations, which could set the user offline while they're still active in the other tab. Design your presence data model to handle this if needed (for example, by tracking connection count instead of a boolean).
 
 ## Next steps
 

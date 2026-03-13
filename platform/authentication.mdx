@@ -65,8 +65,8 @@ const token = createLarkToken('alice', { role: 'admin', teamId: 'team-42' });
 
 Once authenticated, the `auth` object in security rules contains the token's payload:
 
-- `auth.uid` — The user's unique ID from the `uid` field in the token.
-- `auth.token` — The full token payload, including any custom claims.
+- `auth.uid`: The user's unique ID from the `uid` field in the token.
+- `auth.token`: The full token payload, including any custom claims.
 
 ## Custom claims
 
@@ -116,7 +116,7 @@ Here's the full authentication flow:
 7. If valid, the `auth` object is populated for all security rule evaluations on this connection.
 
 <Note>
-Lark doesn't manage user accounts or passwords. It trusts whatever identity your backend puts in the JWT. This gives you full flexibility — use any auth provider, any user store, any login flow you want.
+Lark doesn't manage user accounts or passwords. It trusts whatever identity your backend puts in the JWT. This gives you full flexibility: use any auth provider, any user store, any login flow you want.
 </Note>
 
 ## Secret key management
@@ -125,9 +125,9 @@ Your project's secret key is available in the [Lark dashboard](https://dashboard
 
 A few important rules:
 
-- **Keep it on your server.** Never include the secret key in client-side code, mobile apps, or anywhere a user could extract it.
-- **Use environment variables.** Store it as `LARK_SECRET_KEY` or similar, not hardcoded in source files.
-- **Regenerate if compromised.** You can regenerate your secret key from the dashboard at any time. This immediately invalidates all existing tokens — connected clients will need to re-authenticate with tokens signed by the new key.
+- Keep it on your server. Never include the secret key in client-side code, mobile apps, or anywhere a user could extract it.
+- Use environment variables. Store it as `LARK_SECRET_KEY` or similar, not hardcoded in source files.
+- Regenerate if compromised. You can regenerate your secret key from the dashboard at any time. This immediately invalidates all existing tokens, so connected clients will need to re-authenticate with tokens signed by the new key.
 
 <Warning>
 If your secret key leaks, anyone can generate valid tokens with any `uid` and any claims. They would have full access to your database as any user. Regenerate the key immediately if you suspect it's been exposed.

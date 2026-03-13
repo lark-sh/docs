@@ -3,7 +3,7 @@ title: "Sorting and filtering"
 description: "How Lark orders data and how to query subsets of it"
 ---
 
-When you subscribe to or read a list of children, Lark returns them in a defined order. You control that order with query methods — sorting by key, by value, or by a nested child field — and you can filter the results down to just the slice you need.
+When you subscribe to or read a list of children, Lark returns them in a defined order. You control that order with query methods (sorting by key, by value, or by a nested child field) and you can filter the results down to just the slice you need.
 
 ## Default ordering
 
@@ -54,7 +54,7 @@ If a child doesn't have the specified field, it sorts as if the value is `null` 
 
 ### Order by priority
 
-Sorts children by their priority metadata. Priority is a legacy ordering mechanism — in most cases, `orderByChild` is a better choice. But it's available when you need it.
+Sorts children by their priority metadata. Priority is a legacy ordering mechanism, and in most cases `orderByChild` is a better choice. But it's available when you need it.
 
 ```typescript
 db.ref('players').orderByPriority()
@@ -120,7 +120,7 @@ db.ref('players').orderByChild('score').startAt(100).endAt(500)
 
 ### startAfter / endBefore (exclusive)
 
-`startAfter` and `endBefore` are the exclusive versions — they exclude the boundary value itself.
+`startAfter` and `endBefore` are the exclusive versions. They exclude the boundary value itself.
 
 ```typescript
 // Players with scores strictly greater than 100
@@ -129,7 +129,7 @@ db.ref('players').orderByChild('score').startAfter(100)
 
 ### Key tiebreaker
 
-When multiple children have the same sort value, `startAt`, `endAt`, `startAfter`, `endBefore`, and `equalTo` all accept an optional second parameter — a key — to disambiguate. This is essential for pagination over data with duplicate values.
+When multiple children have the same sort value, `startAt`, `endAt`, `startAfter`, `endBefore`, and `equalTo` all accept an optional second parameter (a key) to disambiguate. This is essential for pagination over data with duplicate values.
 
 ```typescript
 // Two players both have score 250. To start *after* the one with key "alice":
@@ -158,7 +158,7 @@ db.ref('players').orderByKey().equalTo('alice')
 
 You can chain one ordering mode with any combination of limits and ranges to build precise queries.
 
-Here's a practical example — a leaderboard showing the top 10 scores:
+Here's a practical example, a leaderboard showing the top 10 scores:
 
 ```typescript
 // Subscribe to the top 10 players by score

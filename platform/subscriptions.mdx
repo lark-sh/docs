@@ -3,7 +3,7 @@ title: "Subscriptions"
 description: "Listen for real-time data changes across all connected clients"
 ---
 
-Subscriptions are how you get live updates from Lark. You subscribe to a path, and your callback fires whenever the data at that path changes — no matter which client made the change.
+Subscriptions are how you get live updates from Lark. You subscribe to a path, and your callback fires whenever the data at that path changes, no matter which client made the change.
 
 ## Event types
 
@@ -17,7 +17,7 @@ Lark supports five event types, each suited for different use cases.
 | `child_removed` | Fires when a child is removed from the path. |
 | `child_moved` | Fires when a child's sort order changes (relevant with `orderBy` queries). |
 
-`value` is all you need for most use cases. The child events are for working with large collections where you want granular control — adding, updating, and removing individual items without re-processing the entire list.
+`value` is all you need for most use cases. The child events are for working with large collections where you want granular control: adding, updating, and removing individual items without re-processing the entire list.
 
 ## How delta sync works
 
@@ -25,7 +25,7 @@ Lark doesn't re-send the entire dataset every time something changes. When you s
 
 This means subscribing to a path with 10,000 children doesn't re-transmit all 10,000 children when one of them changes. The server sends a small delta describing the change, and your local SDK patches its cached copy.
 
-You don't need to think about this — your callbacks always receive complete snapshots. But it's useful to know that Lark is efficient under the hood, especially for large datasets.
+You don't need to think about this. Your callbacks always receive complete snapshots. But it's useful to know that Lark is efficient under the hood, especially for large datasets.
 
 ## Shared views
 

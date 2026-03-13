@@ -15,10 +15,10 @@ Keys are the path segments that identify children in the [JSON tree](/platform/d
 | Forbidden characters | `.` `$` `#` `[` `]` `/` newlines |
 | Control characters | ASCII 0x00–0x1F and 0x7F are not allowed |
 | Reserved prefix | Keys starting with `.` are reserved for internal use (`.priority`, `.value`, `.sv`) |
-| Max depth | **32 levels** — each path must be fewer than 32 levels deep |
+| Max depth | **32 levels** (each path must be fewer than 32 levels deep) |
 
 <Warning>
-Characters like `.` and `$` are common in many systems (email addresses, MongoDB field names, template strings) but are forbidden in Lark keys. If you need to store an email as a key, encode it first — for example, replace `.` with `,` or use a hash.
+Characters like `.` and `$` are common in many systems (email addresses, MongoDB field names, template strings) but are forbidden in Lark keys. If you need to store an email as a key, encode it first. For example, replace `.` with `,` or use a hash.
 </Warning>
 
 ### Values
@@ -39,7 +39,7 @@ Lark stores JSON. The supported value types are:
 | Object | `{ "key": "value" }` |
 | Null | `null` (deletes the node) |
 
-Writing `null` to a path deletes it. There's no separate "delete" wire operation — a null write and a remove are the same thing.
+Writing `null` to a path deletes it. There's no separate "delete" wire operation; a null write and a remove are the same thing.
 
 #### A note on arrays
 
@@ -78,7 +78,7 @@ For paths with more than 75 million nodes, listen to or query more specific chil
 | Bytes written | **64 MB/minute** per database |
 | Volatile write max size | **2 KB** |
 
-The write payload limit applies to the entire JSON body of a single write operation — including `set`, `update`, and `push`. Multi-path updates are subject to the same limit across all paths combined.
+The write payload limit applies to the entire JSON body of a single write operation, including `set`, `update`, and `push`. Multi-path updates are subject to the same limit across all paths combined.
 
 <Note>
 The 16 MB limit is on the JSON-encoded payload, not the in-memory size. JSON encoding adds overhead for keys, quotes, and structural characters, so the effective data limit is somewhat less than 16 MB.
@@ -94,7 +94,7 @@ Volatile paths have **no rate limit** on writes per second or events per second.
 |---|---|
 | Simultaneous connections | **200,000** per database |
 
-A simultaneous connection is one mobile device, browser tab, or server app connected to the database. This isn't the same as your total user count — users don't all connect at once. An app with millions of monthly users typically has far fewer simultaneous connections.
+A simultaneous connection is one mobile device, browser tab, or server app connected to the database. This isn't the same as your total user count, since users don't all connect at once. An app with millions of monthly users typically has far fewer simultaneous connections.
 
 To scale beyond 200,000 connections, use multiple databases.
 

@@ -21,7 +21,7 @@ import { LarkDatabase } from "@lark-sh/client";
 const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 ```
 
-That's it — operations queue automatically and run once the connection is established. No need to `await` anything before you start using the database.
+That's it. Operations queue automatically and run once the connection is established. No need to `await` anything before you start using the database.
 
 <Tip>
 You can find your project and database IDs in the Lark dashboard. The format is always `projectId/databaseId`.
@@ -110,7 +110,7 @@ main();
 
 ## Next steps
 
-- [Connecting](/lark-sdk/connecting) — connection options, transport selection, and lifecycle events
-- [Writing data](/lark-sdk/writing) — set, update, remove, push, and multi-path writes
-- [Subscriptions](/lark-sdk/subscriptions) — listen for real-time changes with different event types
-- [Authentication](/lark-sdk/auth) — move beyond anonymous auth with tokens
+- [Connecting](/lark-sdk/connecting): connection options, transport selection, and lifecycle events
+- [Writing data](/lark-sdk/writing): set, update, remove, push, and multi-path writes
+- [Subscriptions](/lark-sdk/subscriptions): listen for real-time changes with different event types
+- [Authentication](/lark-sdk/auth): move beyond anonymous auth with tokens

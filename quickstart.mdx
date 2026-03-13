@@ -5,7 +5,7 @@ description: "Create a project and start building in minutes"
 
 ## 1. Create a project
 
-Head to the [Lark dashboard](https://dashboard.lark.sh) and sign in with Google. Click **New Project** and give it a name — this generates a project ID you'll use to connect.
+Head to the [Lark dashboard](https://dashboard.lark.sh) and sign in with Google. Click **New Project** and give it a name. This generates a project ID you'll use to connect.
 
 In your project's **Settings** page, note your **Project ID**. You'll need it in the next step.
 
@@ -49,7 +49,7 @@ await db.ref('players/alice').set({
 });
 ```
 
-The `anonymous: true` option connects without authentication — useful for getting started quickly. You'll add proper auth later.
+The `anonymous: true` option connects without authentication, which is useful for getting started quickly. You'll add proper auth later.
 
 ### Read data
 
@@ -60,7 +60,7 @@ console.log(snapshot.val()); // { name: 'Alice', score: 0 }
 
 ### Subscribe to real-time updates
 
-This is where it gets interesting. Subscribe to a path and your callback fires every time the data changes — from any connected client.
+Subscribe to a path and your callback fires every time the data changes, from any connected client.
 
 ```typescript
 const unsubscribe = db.ref('players').on('value', (snapshot) => {
@@ -92,7 +92,7 @@ lark login
 lark config set-project your-project-id
 ```
 
-Once set up, you can read and write data, export and import databases, deploy security rules, and monitor your project — all without leaving the terminal. See the [CLI overview](/cli/overview) for common workflows.
+Once set up, you can read and write data, export and import databases, deploy security rules, and monitor your project, all without leaving the terminal. See the [CLI overview](/cli/overview) for common workflows.
 
 ### Claude Code plugin
 

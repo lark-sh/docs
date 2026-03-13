@@ -7,11 +7,13 @@ Lark supports two transport protocols for client-server communication. Your SDK 
 
 ## WebSocket
 
-WebSocket is the default transport. It works everywhere — all browsers, Node.js, React Native, and any environment that supports standard WebSocket connections.
+WebSocket is the default transport. It works everywhere: all browsers, Node.js, React Native, and any environment that supports standard WebSocket connections.
 
-- **URL format**: `wss://{projectId}.larkdb.net/ws`
-- **Delivery**: Reliable, ordered TCP delivery. Every message arrives, in order.
-- **Compatibility**: Universal. If your client can make a network connection, it can use WebSocket.
+| | |
+|---|---|
+| URL | `wss://{projectId}.larkdb.net/ws` |
+| Delivery | Reliable, ordered TCP delivery. Every message arrives, in order. |
+| Compatibility | Universal. If your client can make a network connection, it can use WebSocket. |
 
 WebSocket is a mature, battle-tested protocol. For most applications, it's the only transport you need.
 
@@ -19,10 +21,11 @@ WebSocket is a mature, battle-tested protocol. For most applications, it's the o
 
 WebTransport is a modern protocol built on HTTP/3 and QUIC. It's available in newer browsers and provides meaningful advantages for real-time applications.
 
-- **URL format**: `https://{projectId}.larkdb.net:{port}/wt`
-  - The port is randomly assigned from the range 7778-7809 for load balancing.
-- **Delivery**: QUIC streams for reliable data, plus UDP datagrams for [volatile paths](/platform/volatile).
-- **Compatibility**: Chrome 97+, Edge 97+, Firefox 114+. Not yet available in Safari, Node.js, or React Native.
+| | |
+|---|---|
+| URL | `https://{projectId}.larkdb.net:{port}/wt` (port randomly assigned from 7778-7809 for load balancing) |
+| Delivery | QUIC streams for reliable data, plus UDP datagrams for [volatile paths](/platform/volatile). |
+| Compatibility | Chrome 97+, Edge 97+, Firefox 114+. Not yet available in Safari, Node.js, or React Native. |
 
 ### WebTransport advantages
 
@@ -30,15 +33,15 @@ WebTransport has two key advantages over WebSocket:
 
 **No head-of-line blocking.** With WebSocket (TCP), if one packet is lost, every subsequent packet waits until the lost one is retransmitted. A dropped packet carrying a chat message stalls cursor updates, game state, everything. With WebTransport (QUIC), each stream is independent. A lost packet on one stream doesn't block other streams.
 
-**UDP datagrams for volatile data.** Volatile writes over WebTransport use UDP datagrams — unreliable, unordered delivery with zero retransmission overhead. For data like cursor positions where you only care about the latest value, this is ideal. A lost datagram is irrelevant because a newer one is already on the way.
+**UDP datagrams for volatile data.** Volatile writes over WebTransport use UDP datagrams, providing unreliable, unordered delivery with zero retransmission overhead. For data like cursor positions where you only care about the latest value, this is ideal. A lost datagram is irrelevant because a newer one is already on the way.
 
 <Info>
-These advantages matter most under packet loss — which is common on mobile networks, congested Wi-Fi, and cross-continent connections. On a clean local network, WebSocket and WebTransport perform similarly.
+These advantages matter most under packet loss, which is common on mobile networks, congested Wi-Fi, and cross-continent connections. On a clean local network, WebSocket and WebTransport perform similarly.
 </Info>
 
 ## Auto-detection
 
-By default, the Lark SDK tries WebTransport first. If the connection fails or times out, it falls back to WebSocket. This happens transparently — your code doesn't need to handle it.
+By default, the Lark SDK tries WebTransport first. If the connection fails or times out, it falls back to WebSocket. This happens transparently, and your code doesn't need to handle it.
 
 ```typescript
 // The SDK auto-detects the best transport

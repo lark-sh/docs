@@ -31,7 +31,7 @@ For large datasets, you often don't need the entire subtree. Add `shallow=true` 
 curl 'https://chess-app.larkdb.net/my-game/players.json?shallow=true'
 ```
 
-By default, shallow reads replace every child with `true` — you see which keys exist, but nothing about their values or size:
+By default, shallow reads replace every child with `true`. You see which keys exist, but nothing about their values or size:
 
 ```json
 {
@@ -58,9 +58,9 @@ curl 'https://chess-app.larkdb.net/my-game/.json?shallow=true&v=2'
 }
 ```
 
-This tells you a lot more at a glance — `players` is an object containing ~4 KB of data, while `settings`, `playerCount`, and `active` are leaf values you can read directly. Useful for exploring an unfamiliar database or deciding which subtrees are worth fetching in full.
+This tells you a lot more at a glance. `players` is an object containing ~4 KB of data, while `settings`, `playerCount`, and `active` are leaf values you can read directly. Useful for exploring an unfamiliar database or deciding which subtrees are worth fetching in full.
 
-<Note>Without `v=2`, the response above would be `{"players": true, "settings": true, "playerCount": true, "active": true}` — no way to tell which children are containers and which are primitives.</Note>
+<Note>Without `v=2`, the response above would be `{"players": true, "settings": true, "playerCount": true, "active": true}`, with no way to tell which children are containers and which are primitives.</Note>
 
 ## Querying
 
@@ -84,7 +84,7 @@ curl 'https://chess-app.larkdb.net/my-game/highscores.json?orderBy="$value"'
 curl 'https://chess-app.larkdb.net/my-game/tasks.json?orderBy="$priority"'
 ```
 
-<Note>The `orderBy` value must be a JSON string — wrap it in double quotes in the URL. Most shells require escaping: `orderBy=\"score\"` or `orderBy=%22score%22`.</Note>
+<Note>The `orderBy` value must be a JSON string. Wrap it in double quotes in the URL. Most shells require escaping: `orderBy=\"score\"` or `orderBy=%22score%22`.</Note>
 
 ### Limit results
 

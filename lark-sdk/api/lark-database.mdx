@@ -68,7 +68,7 @@ Opens a connection to the Lark server using the options passed to the constructo
 
 ```typescript
 const db = new LarkDatabase('my-project/my-database', { anonymous: true });
-await db.connect(); // optional — operations queue automatically
+await db.connect(); // optional, operations queue automatically
 ```
 
 ### disconnect
@@ -204,7 +204,7 @@ console.log(`${db.getPendingWriteCount()} writes pending`);
 clearPendingWrites(): void
 ```
 
-Discards all pending writes that have not been sent to the server. Use with caution — discarded writes cannot be recovered.
+Discards all pending writes that have not been sent to the server. Use with caution, because discarded writes cannot be recovered.
 
 <Note>
 This permanently drops any unsent writes. Only use this if you intentionally want to discard local changes.
@@ -283,7 +283,7 @@ const unsubscribe = db.onError((error) => {
 onAuthStateChanged(callback: (auth: AuthInfo | null) => void): () => void
 ```
 
-Registers a listener that fires when the authentication state changes — on sign-in, sign-out, or token refresh.
+Registers a listener that fires when the authentication state changes: on sign-in, sign-out, or token refresh.
 
 ```typescript
 const unsubscribe = db.onAuthStateChanged((auth) => {

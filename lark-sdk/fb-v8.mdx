@@ -19,7 +19,7 @@ import { LarkDatabase } from "@lark-sh/client/fb-v8";
 
 The biggest API difference between the modern Lark SDK and the Firebase v8 compatibility layer is how subscriptions work.
 
-**Modern Lark SDK** — `on()` returns an unsubscribe function:
+**Modern Lark SDK**: `on()` returns an unsubscribe function:
 
 ```typescript
 import { LarkDatabase } from "@lark-sh/client";
@@ -35,7 +35,7 @@ const unsubscribe = db.ref("scores").on("value", (snapshot) => {
 unsubscribe();
 ```
 
-**Firebase v8 compatibility** — `on()` returns the callback, and you use `off()` to stop listening:
+**Firebase v8 compatibility**: `on()` returns the callback, and you use `off()` to stop listening:
 
 ```typescript
 import { LarkDatabase } from "@lark-sh/client/fb-v8";
@@ -93,15 +93,15 @@ class ScoreTracker {
 
 Use `@lark-sh/client/fb-v8` when:
 
-- **You're migrating a Firebase v8 codebase** and don't want to rewrite every `on()`/`off()` call pattern.
-- **You have shared libraries or utilities** that expect the Firebase v8 subscription API.
-- **You need `off()` semantics** like removing all listeners for a specific event type with a single call.
+- You're migrating a Firebase v8 codebase and don't want to rewrite every `on()`/`off()` call pattern.
+- You have shared libraries or utilities that expect the Firebase v8 subscription API.
+- You need `off()` semantics like removing all listeners for a specific event type with a single call.
 
 Use the modern `@lark-sh/client` when:
 
-- **You're starting a new project.** The unsubscribe-function pattern is cleaner and less error-prone.
-- **You're using React, Vue, or Svelte.** Framework cleanup hooks work naturally with unsubscribe functions.
-- **You want the simplest API.** No need to track callback references or worry about matching the right callback in `off()`.
+- You're starting a new project. The unsubscribe-function pattern is cleaner and less error-prone.
+- You're using React, Vue, or Svelte. Framework cleanup hooks work naturally with unsubscribe functions.
+- You want the simplest API. No need to track callback references or worry about matching the right callback in `off()`.
 
 <Tip>
 You can use both imports in the same project during a migration. They share the same underlying connection, so you won't create duplicate connections.
@@ -135,4 +135,4 @@ const unsubscribe = ref.on("value", (snapshot) => {
 unsubscribe();
 ```
 
-The rest of the API — `set()`, `update()`, `remove()`, `once()`, `transaction()`, queries, OnDisconnect — is identical between the two.
+The rest of the API (`set()`, `update()`, `remove()`, `once()`, `transaction()`, queries, OnDisconnect) is identical between the two.

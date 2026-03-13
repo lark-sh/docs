@@ -5,7 +5,7 @@ description: "Manage connections, lifecycle, and transport options"
 
 # Connecting
 
-The `LarkDatabase` class is your entry point. Pass your project, database, and auth details to the constructor and start using it immediately — the connection happens automatically.
+The `LarkDatabase` class is your entry point. Pass your project, database, and auth details to the constructor and start using it immediately. The connection happens automatically.
 
 ## Creating an instance
 
@@ -22,7 +22,7 @@ db.ref("users").on("value", (snapshot) => {
 });
 ```
 
-The connection is established lazily. You don't need to call anything else before reading, writing, or subscribing — operations queue automatically and execute once the connection is authenticated.
+The connection is established lazily. You don't need to call anything else before reading, writing, or subscribing. Operations queue automatically and execute once the connection is authenticated.
 
 ## Options
 
@@ -49,7 +49,7 @@ const db = new LarkDatabase("my-project/my-database", { anonymous: true });
 await db.connect(); // resolves when fully connected and authenticated
 ```
 
-Most code doesn't need this — lazy queuing handles it for you. Use `await db.connect()` when you need to gate logic on a confirmed connection (e.g., showing a "connected" indicator, or failing fast if the server is unreachable).
+Most code doesn't need this. Lazy queuing handles it for you. Use `await db.connect()` when you need to gate logic on a confirmed connection (e.g., showing a "connected" indicator, or failing fast if the server is unreachable).
 
 ### Transport selection
 

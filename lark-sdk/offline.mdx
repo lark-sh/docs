@@ -54,7 +54,7 @@ While offline via `goOffline()`:
 
 ### `disconnect()`
 
-Fully tears down the connection and clears everything — cache, subscriptions, pending writes. Use this when you're completely done with the database.
+Fully tears down the connection and clears everything: cache, subscriptions, pending writes. Use this when you're completely done with the database.
 
 ```typescript
 db.disconnect();
@@ -95,7 +95,7 @@ console.log(`${count} writes pending`);
 
 ### `db.clearPendingWrites()`
 
-Discards all pending writes. Use this carefully — those writes will be lost permanently.
+Discards all pending writes. Use this carefully, because those writes will be lost permanently.
 
 ```typescript
 db.clearPendingWrites();

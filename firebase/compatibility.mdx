@@ -9,14 +9,14 @@ Lark implements the Firebase Realtime Database wire protocol. Here's what works,
 
 All core Firebase RTDB operations work with Lark:
 
-- **Reads and writes** — `set`, `update`, `remove`, `push`, `once`
-- **Subscriptions** — `on` / `off` with all event types: `value`, `child_added`, `child_changed`, `child_removed`, `child_moved`
-- **Queries** — `orderByChild`, `orderByKey`, `orderByValue`, `orderByPriority`, `limitToFirst`, `limitToLast`, `startAt`, `endAt`, `equalTo`
-- **Transactions** — Full transaction support with retries
-- **onDisconnect** — `onDisconnect().set()`, `onDisconnect().update()`, `onDisconnect().remove()`, `onDisconnect().cancel()`
-- **Server values** — `ServerValue.TIMESTAMP`
-- **Priority** — Setting and querying by priority
-- **REST API** — `GET`, `PUT`, `POST`, `PATCH`, `DELETE`, query parameters, ETags, and Server-Sent Events streaming. See the [REST API documentation](/rest-api/overview) for full details.
+- Reads and writes: `set`, `update`, `remove`, `push`, `once`
+- Subscriptions: `on` / `off` with all event types (`value`, `child_added`, `child_changed`, `child_removed`, `child_moved`)
+- Queries: `orderByChild`, `orderByKey`, `orderByValue`, `orderByPriority`, `limitToFirst`, `limitToLast`, `startAt`, `endAt`, `equalTo`
+- Transactions with retries
+- onDisconnect: `onDisconnect().set()`, `onDisconnect().update()`, `onDisconnect().remove()`, `onDisconnect().cancel()`
+- Server values: `ServerValue.TIMESTAMP`
+- Priority: setting and querying by priority
+- REST API: `GET`, `PUT`, `POST`, `PATCH`, `DELETE`, query parameters, ETags, and Server-Sent Events streaming. See the [REST API documentation](/rest-api/overview) for full details.
 
 ## Wire protocol
 
@@ -24,7 +24,7 @@ Lark implements the Firebase RTDB wire protocol. The Firebase SDK connects over 
 
 ## Security rules
 
-Same syntax, same semantics. Your existing Firebase security rules work in Lark without modification. The `auth` object, `$variables`, `.read`, `.write`, `.validate`, `.indexOn`, `newData`, `data`, `root` — all of it works identically.
+Same syntax, same semantics. Your existing Firebase security rules work in Lark without modification. The `auth` object, `$variables`, `.read`, `.write`, `.validate`, `.indexOn`, `newData`, `data`, `root`: all of it works identically.
 
 ## What's different
 
@@ -48,11 +48,10 @@ Lark does not support the `.info/serverTimeOffset` path. If you need server time
 
 Even when using Firebase SDKs, you benefit from Lark's server-side features automatically:
 
-- **Volatile path batching** — Updates to volatile paths are batched for efficiency.
-- **Shared view optimization** — When multiple clients subscribe to the same path, Lark optimizes the server-side work.
-- **Lower latency** — Sub-50ms p99 latency for reads and writes.
+- Volatile path batching: updates to volatile paths are batched for efficiency.
+- Shared view optimization: when multiple clients subscribe to the same path, Lark optimizes the server-side work.
+- Lower latency: sub-50ms p99 latency for reads and writes.
 
+To use Lark's client-side features like WebTransport or the native SDK API, switch to the [Lark SDK](/lark-sdk/overview).
 
-To use Lark's client-side features like WebTransport or the streamlined API, switch to the [Lark SDK](/lark-sdk/overview).
-
-<Note>You can use Firebase SDKs and the Lark SDK in the same project. Some clients can connect with Firebase SDKs while others use the Lark SDK — they all talk to the same database.</Note>
+<Note>You can use Firebase SDKs and the Lark SDK in the same project. Some clients can connect with Firebase SDKs while others use the Lark SDK. They all talk to the same database.</Note>
