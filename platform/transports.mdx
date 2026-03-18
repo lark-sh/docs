@@ -3,7 +3,7 @@ title: "Transports"
 description: "WebSocket and WebTransport connections to Lark"
 ---
 
-Lark supports two transport protocols for client-server communication. Your SDK picks the best one automatically, but it helps to understand what's happening under the hood.
+Lark supports two transport protocols for client-server communication. The SDK defaults to WebSocket, but you can opt in to WebTransport for lower latency in supported browsers.
 
 ## WebSocket
 
@@ -39,39 +39,37 @@ WebTransport has two key advantages over WebSocket:
 These advantages matter most under packet loss, which is common on mobile networks, congested Wi-Fi, and cross-continent connections. On a clean local network, WebSocket and WebTransport perform similarly.
 </Info>
 
-## Auto-detection
+## Transport selection
 
-By default, the Lark SDK tries WebTransport first. If the connection fails or times out, it falls back to WebSocket. This happens transparently, and your code doesn't need to handle it.
-
-```typescript
-// The SDK auto-detects the best transport
-const db = new LarkDatabase('my-project/my-database');
-// Connected via WebTransport if available, WebSocket otherwise
-```
-
-The default timeout for the WebTransport attempt is **2 seconds**. If WebTransport doesn't connect within that window, the SDK immediately falls back to WebSocket.
-
-### Forcing a specific transport
-
-You can override auto-detection if you want to control which transport is used:
+By default, the SDK uses WebSocket. To use WebTransport, set the `transport` option explicitly:
 
 ```typescript
-// Force WebSocket only
+// Default — WebSocket only
 const db = new LarkDatabase('my-project/my-database', {
-  transport: 'websocket'
+  anonymous: true,
+});
+
+// Try WebTransport first, fall back to WebSocket
+const db = new LarkDatabase('my-project/my-database', {
+  anonymous: true,
+  transport: 'auto',
 });
 
 // Force WebTransport only (will fail if not supported)
 const db = new LarkDatabase('my-project/my-database', {
-  transport: 'webtransport'
+  anonymous: true,
+  transport: 'webtransport',
 });
 
-// Auto-detect with a custom timeout
+// Auto with a custom timeout for the WebTransport attempt
 const db = new LarkDatabase('my-project/my-database', {
+  anonymous: true,
   transport: 'auto',
-  webTransportTimeout: 5000 // 5 seconds
+  webTransportTimeout: 5000, // 5 seconds (default is 2 seconds)
 });
 ```
+
+In `'auto'` mode, the SDK tries WebTransport first. If the connection fails or doesn't establish within `webtransportTimeout` milliseconds, it falls back to WebSocket transparently.
 
 ## When to prefer WebTransport
 
@@ -85,7 +83,7 @@ Choose WebTransport when:
 
 WebSocket is the right choice for most applications. It's mature, universal, and performant. You won't notice a difference unless you're pushing high-frequency volatile updates or operating under significant packet loss.
 
-Stick with WebSocket (or let auto-detection handle it) when:
+Stick with the default WebSocket when:
 
 - Your app doesn't use volatile paths.
 - You need to support Safari, Node.js, or React Native.
@@ -93,7 +91,7 @@ Stick with WebSocket (or let auto-detection handle it) when:
 - You just want things to work everywhere without thinking about it.
 
 <Tip>
-When in doubt, leave the transport setting on auto. Your Chrome and Edge users get the benefits of WebTransport, and everyone else gets reliable WebSocket. No code changes needed.
+If you want the best of both worlds, set `transport: 'auto'`. Your Chrome and Edge users get the benefits of WebTransport, and everyone else gets reliable WebSocket.
 </Tip>
 
 ## What's next

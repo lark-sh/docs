@@ -25,8 +25,8 @@ Creates a new `LarkDatabase` instance.
 | `anonymous` | `boolean` | `false` | Connect without user credentials. |
 | `token` | `string` | — | A JWT for authenticated access. |
 | `domain` | `string` | `'larkdb.net'` | The Lark server domain. |
-| `transport` | `'auto' \| 'websocket' \| 'webtransport'` | `'auto'` | Which transport protocol to use. |
-| `webtransportTimeout` | `number` | `2000` | Milliseconds to wait for WebTransport before falling back to WebSocket. |
+| `transport` | `'auto' \| 'websocket' \| 'webtransport'` | `'websocket'` | Which transport protocol to use. |
+| `webtransportTimeout` | `number` | `2000` | Milliseconds to wait for WebTransport before falling back to WebSocket. Only applies when `transport` is `'auto'`. |
 
 You must provide either `anonymous: true` or a `token`. If you pass both, the token takes priority.
 

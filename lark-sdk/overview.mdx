@@ -27,7 +27,7 @@ const unsubscribe = db.ref("scores").on("value", (snapshot) => {
 unsubscribe();
 ```
 
-The SDK automatically negotiates the best transport available. When WebTransport (HTTP/3) is supported, you get lower latency and better multiplexing. It falls back to WebSocket seamlessly.
+The SDK connects over WebSocket by default. You can opt in to WebTransport (HTTP/3) for lower latency and better multiplexing in supported browsers by setting `transport: 'auto'`.
 
 Ephemeral data like cursor positions, typing indicators, and player coordinates can flow through volatile paths, which are high-frequency updates that skip persistence for maximum speed.
 

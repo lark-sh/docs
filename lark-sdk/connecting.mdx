@@ -33,8 +33,8 @@ All connection configuration is passed as the second argument to the constructor
 | `anonymous` | `boolean` | `false` | Connect without user credentials. |
 | `token` | `string` | — | A JWT for authenticated access. |
 | `domain` | `string` | `'larkdb.net'` | The Lark server domain. |
-| `transport` | `'auto' \| 'websocket' \| 'webtransport'` | `'auto'` | Which transport protocol to use. |
-| `webtransportTimeout` | `number` | `2000` | Milliseconds to wait for WebTransport before falling back to WebSocket. |
+| `transport` | `'auto' \| 'websocket' \| 'webtransport'` | `'websocket'` | Which transport protocol to use. |
+| `webtransportTimeout` | `number` | `2000` | Milliseconds to wait for WebTransport before falling back to WebSocket. Only applies when `transport` is `'auto'`. |
 
 <Note>
 You must provide either `anonymous: true` or a `token`. If you pass both, the token takes priority.
@@ -53,13 +53,18 @@ Most code doesn't need this. Lazy queuing handles it for you. Use `await db.conn
 
 ### Transport selection
 
-By default, the SDK uses `'auto'` mode. It tries WebTransport (HTTP/3) first for lower latency. If WebTransport isn't available or doesn't connect within `webtransportTimeout` milliseconds, it falls back to WebSocket.
+The SDK uses WebSocket by default. To opt in to WebTransport, set `transport` to `'auto'` or `'webtransport'`:
 
 ```typescript
-// Force WebSocket only
+// Default — WebSocket only (you can omit the transport option entirely)
 const db = new LarkDatabase("my-project/my-database", {
   anonymous: true,
-  transport: "websocket",
+});
+
+// Try WebTransport first, fall back to WebSocket
+const db = new LarkDatabase("my-project/my-database", {
+  anonymous: true,
+  transport: "auto",
 });
 
 // Force WebTransport only (will fail if not supported)
