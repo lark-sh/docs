@@ -23,9 +23,9 @@ When enabled, databases are created automatically the first time a client connec
 
 <Tip>Keep **Auto Create** enabled while getting started. It removes friction during development.</Tip>
 
-## Allow Legacy Firebase
+## Firebase compatibility
 
-Enables compatibility with existing Firebase Realtime Database SDKs. When you toggle this on, two additional options appear:
+Two settings control how Lark behaves with existing Firebase Realtime Database SDKs:
 
 - **Use First Path as Database**: Routes clients by their first path segment. For example, a write to `/room-123/players/alice` goes to a database named `room-123` at path `/players/alice`. See [Database routing](/firebase/database-routing) for when and why to use this.
 - **Firebase Auth Project ID**: Your Firebase project ID, used to validate Firebase Auth tokens. Set this if your users authenticate through Firebase Auth.

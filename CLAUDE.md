@@ -25,7 +25,7 @@ Overview of the service, getting oriented, and dashboard usage.
 
 #### Group: Dashboard
 - **Dashboard overview** (`dashboard/overview.mdx`) — Signing in (Google OAuth), projects list, creating a project
-- **Project settings** (`dashboard/settings.mdx`) — Project name, project ID, ephemeral mode, auto-create databases, Firebase compatibility toggle (use first path as database, Firebase Auth project ID), secret key management (view/copy/regenerate)
+- **Project settings** (`dashboard/settings.mdx`) — Project name, project ID, ephemeral mode, auto-create databases, Firebase compatibility settings (use first path as database, Firebase Auth project ID), secret key management (view/copy/regenerate)
 - **Database management** (`dashboard/databases.mdx`) — Listing databases (search, pagination, status/active/inactive), creating databases, deleting databases, the real-time JSON editor (tree view, shallow view for large datasets), import/export JSON
 - **Security rules editor** (`dashboard/rules-editor.mdx`) — The JSON5 rules editor in project settings, saving and validating rules. (Links to the full security rules reference in Section 2.)
 - **Monitoring** (`dashboard/monitoring.mdx`) — Metrics cards (peak CCU, bandwidth, operations, latency), charts (1h/24h/7d), billing usage (CCU and bandwidth limits, warning thresholds), events log (high latency, approaching limits, connection rejected, storage warnings)
@@ -63,12 +63,12 @@ Concepts that apply regardless of which SDK you use.
 For developers with existing Firebase projects or who prefer the Firebase SDK.
 
 #### Group: Getting started
-- **Overview** (`firebase/overview.mdx`) — How Lark works as a Firebase RTDB backend, what's supported, what's different. Enable "Allow Legacy Firebase" in project settings.
+- **Overview** (`firebase/overview.mdx`) — How Lark works as a Firebase RTDB backend, what's supported, what's different.
 - **Setup** (`firebase/setup.mdx`) — Configuring a Firebase app to point at Lark instead of Firebase RTDB. Connection URL format, config changes needed.
 
 #### Group: Guides
 - **Using Firebase Auth with Lark** (`firebase/auth.mdx`) — Setting the Firebase Auth Project ID in dashboard, how RS256 token validation works (proxy layer validates), using Firebase Auth tokens with Lark
-- **Migrating an existing project** (`firebase/migration.mdx`) — Step-by-step: create Lark project, enable Firebase compatibility, configure "use first path as database" if needed, update Firebase config, migrate security rules, export/import data, testing
+- **Migrating an existing project** (`firebase/migration.mdx`) — Step-by-step: create Lark project, configure "use first path as database" if needed, update Firebase config, migrate security rules, export/import data, testing
 - **Compatibility notes** (`firebase/compatibility.mdx`) — What Firebase RTDB features are fully supported, any differences or limitations, wire protocol compatibility
 
 ### Section 4: REST API

@@ -9,9 +9,7 @@ Moving from Firebase Realtime Database to Lark is straightforward. Your code, se
   <Step title="Create a Lark project">
     Create a project in the [Lark dashboard](https://dashboard.lark.sh). Note your project ID, as you'll need it for the connection URL.
   </Step>
-  <Step title="Enable Firebase compatibility">
-    In project settings, toggle **Allow Legacy Firebase**. This turns on the Firebase wire protocol so your existing SDKs can connect.
-
+  <Step title="Plan your database layout">
     If your Firebase app stores multiple independent data silos (game rooms, workspaces, etc.) under path prefixes, Lark can split them into separate databases automatically. See [Database routing](/firebase/database-routing) for your options.
   </Step>
   <Step title="Configure Firebase Auth (if applicable)">

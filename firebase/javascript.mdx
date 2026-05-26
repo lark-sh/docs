@@ -45,9 +45,6 @@ const app = initializeApp({
 const db = getDatabase(app);
 ```
 
-## Project settings
+## Database routing
 
-Before connecting, make sure your Lark project is configured correctly:
-
-1. **Allow Legacy Firebase** must be enabled in your Lark project settings. This turns on the Firebase wire protocol.
-2. If your Firebase app stores many independent data silos under path prefixes (game rooms, workspaces, etc.), see [Database routing](/firebase/database-routing) for options on splitting them into separate Lark databases.
+If your Firebase app stores many independent data silos under path prefixes (game rooms, workspaces, etc.), see [Database routing](/firebase/database-routing) for options on splitting them into separate Lark databases.
