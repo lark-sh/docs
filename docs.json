@@ -11,14 +11,16 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Documentation",
+        "tab": "Overview",
         "groups": [
           {
             "group": "Getting started",
             "pages": [
               "index",
               "quickstart",
-              "supported-platforms"
+              "open-source",
+              "supported-platforms",
+              "dashboard/pricing"
             ]
           },
           {
@@ -28,8 +30,7 @@
               "dashboard/settings",
               "dashboard/databases",
               "dashboard/rules-editor",
-              "dashboard/monitoring",
-              "dashboard/pricing"
+              "dashboard/monitoring"
             ]
           }
         ]
@@ -183,8 +184,13 @@
   "navbar": {
     "links": [
       {
-        "label": "Dashboard",
+        "label": "Cloud Dashboard",
         "href": "https://dashboard.lark.sh"
+      },
+      {
+        "label": "GitHub",
+        "href": "https://github.com/lark-sh/lark",
+        "icon": "github"
       }
     ]
   },

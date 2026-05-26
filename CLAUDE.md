@@ -21,7 +21,8 @@ Overview of the service, getting oriented, and dashboard usage.
 
 #### Group: Getting started
 - **Introduction** (`index.mdx`) — What is Lark, key features (real-time sync, Firebase-compatible, sub-50ms latency, WebSocket + WebTransport, ~20KB native client). Positioning: drop-in Firebase RTDB replacement built for games.
-- **Quickstart** (`quickstart.mdx`) — Fastest path to a working app. Create a project in the dashboard, install SDK, connect, write/read/subscribe. Minimal working example.
+- **Quickstart** (`quickstart.mdx`) — Fastest path to a working app. Create a project in the dashboard, install SDK, connect, write/read/subscribe. Minimal working example. Cloud-first, with a callout linking self-hosters to the OSS quickstart on GitHub.
+- **Open source** (`open-source.mdx`) — Lark is open source (AGPL v3 + CLA) at github.com/lark-sh/lark. What self-hosting gives you (no lock-in, inspection, run it yourself), what Lark Cloud adds (managed ops, scaling, support, commercial license). Cloud stays the default CTA; OSS is the trust/no-lock-in layer. The hub other pages point self-hosters to. Web docs = how to use Lark; GitHub = how to run/self-host Lark (install/deploy/backup are out of scope here).
 
 #### Group: Dashboard
 - **Dashboard overview** (`dashboard/overview.mdx`) — Signing in (Google OAuth), projects list, creating a project

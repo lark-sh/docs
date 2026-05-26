@@ -40,6 +40,10 @@ All connection configuration is passed as the second argument to the constructor
 You must provide either `anonymous: true` or a `token`. If you pass both, the token takes priority.
 </Note>
 
+<Note>
+Self-hosting Lark? Set `domain` to your own host instead of the default `larkdb.net`. See [Open source](/open-source).
+</Note>
+
 ## Waiting for the connection
 
 If you need to confirm the connection is established before proceeding, you can optionally call `await db.connect()`:
