@@ -11,7 +11,7 @@ Replace the data at a path completely. Any existing data at that path is overwri
 
 ```bash
 curl -X PUT \
-  'https://chess-app.larkdb.net/my-game/players/alice.json?auth=YOUR_TOKEN' \
+  'https://my-game--chess-app.larkdb.net/players/alice.json?auth=YOUR_TOKEN' \
   -d '{"name": "Alice", "score": 250, "online": true}'
 ```
 
@@ -33,7 +33,7 @@ Add a new child with an auto-generated key. This is the REST equivalent of `push
 
 ```bash
 curl -X POST \
-  'https://chess-app.larkdb.net/my-game/messages.json?auth=YOUR_TOKEN' \
+  'https://my-game--chess-app.larkdb.net/messages.json?auth=YOUR_TOKEN' \
   -d '{"text": "Hello!", "sender": "alice", "timestamp": {".sv": "timestamp"}}'
 ```
 
@@ -55,7 +55,7 @@ Merge data into an existing path. Only the specified keys are modified; everythi
 
 ```bash
 curl -X PATCH \
-  'https://chess-app.larkdb.net/my-game/players/alice.json?auth=YOUR_TOKEN' \
+  'https://my-game--chess-app.larkdb.net/players/alice.json?auth=YOUR_TOKEN' \
   -d '{"score": 300, "lastSeen": {".sv": "timestamp"}}'
 ```
 
@@ -67,7 +67,7 @@ Update multiple locations atomically by using paths as keys in your `PATCH` body
 
 ```bash
 curl -X PATCH \
-  'https://chess-app.larkdb.net/my-game/.json?auth=YOUR_TOKEN' \
+  'https://my-game--chess-app.larkdb.net/.json?auth=YOUR_TOKEN' \
   -d '{
     "players/alice/score": 300,
     "players/bob/score": 275,
@@ -84,7 +84,7 @@ Delete data at a path.
 
 ```bash
 curl -X DELETE \
-  'https://chess-app.larkdb.net/my-game/players/alice.json?auth=YOUR_TOKEN'
+  'https://my-game--chess-app.larkdb.net/players/alice.json?auth=YOUR_TOKEN'
 ```
 
 Returns `null` on success. Deleting a non-existent path succeeds silently.
@@ -95,7 +95,7 @@ Use `{".sv": "timestamp"}` to write the server's current timestamp:
 
 ```bash
 curl -X PUT \
-  'https://chess-app.larkdb.net/my-game/players/alice/lastSeen.json?auth=YOUR_TOKEN' \
+  'https://my-game--chess-app.larkdb.net/players/alice/lastSeen.json?auth=YOUR_TOKEN' \
   -d '{".sv": "timestamp"}'
 ```
 
@@ -107,7 +107,7 @@ If you don't need the response body (saving bandwidth), add `print=silent`:
 
 ```bash
 curl -X PUT \
-  'https://chess-app.larkdb.net/my-game/players/alice/score.json?auth=YOUR_TOKEN&print=silent' \
+  'https://my-game--chess-app.larkdb.net/players/alice/score.json?auth=YOUR_TOKEN&print=silent' \
   -d '500'
 ```
 

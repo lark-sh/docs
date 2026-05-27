@@ -21,7 +21,7 @@ Add the `X-Firebase-ETag: true` header to any `GET` request:
 ```bash
 curl -i \
   -H 'X-Firebase-ETag: true' \
-  'https://chess-app.larkdb.net/my-game/players/alice.json?auth=YOUR_TOKEN'
+  'https://my-game--chess-app.larkdb.net/players/alice.json?auth=YOUR_TOKEN'
 ```
 
 Response headers include the ETag:
@@ -43,7 +43,7 @@ Include the ETag in an `If-Match` header on your write:
 ```bash
 curl -X PUT \
   -H 'If-Match: "a1b2c3d4e5f6..."' \
-  'https://chess-app.larkdb.net/my-game/players/alice/score.json?auth=YOUR_TOKEN' \
+  'https://my-game--chess-app.larkdb.net/players/alice/score.json?auth=YOUR_TOKEN' \
   -d '300'
 ```
 
