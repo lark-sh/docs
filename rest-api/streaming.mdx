@@ -10,7 +10,7 @@ The REST API supports Server-Sent Events (SSE) for real-time streaming. Send a `
 ```bash
 curl -N \
   -H 'Accept: text/event-stream' \
-  'https://chess-app.larkdb.net/my-game/players.json?auth=YOUR_TOKEN'
+  'https://my-game--chess-app.larkdb.net/players.json?auth=YOUR_TOKEN'
 ```
 
 The `-N` flag disables curl's output buffering so events appear immediately.
@@ -64,7 +64,7 @@ The `path` field in each event is relative to the path you subscribed to. If you
 ### Browser (EventSource)
 
 ```typescript
-const url = 'https://chess-app.larkdb.net/my-game/players.json?auth=YOUR_TOKEN';
+const url = 'https://my-game--chess-app.larkdb.net/players.json?auth=YOUR_TOKEN';
 const source = new EventSource(url);
 
 source.addEventListener('put', (e) => {
@@ -89,7 +89,7 @@ Use any SSE client library, or read the stream manually:
 
 ```typescript
 const response = await fetch(
-  'https://chess-app.larkdb.net/my-game/players.json?auth=YOUR_TOKEN',
+  'https://my-game--chess-app.larkdb.net/players.json?auth=YOUR_TOKEN',
   { headers: { 'Accept': 'text/event-stream' } }
 );
 
