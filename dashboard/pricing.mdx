@@ -1,8 +1,38 @@
 ---
 title: "Pricing"
-description: "Lark Cloud pricing plans and billing"
+description: "How Lark Cloud billing works and what each usage metric means"
 ---
 
-Pricing details for Lark Cloud are coming soon. Lark Cloud is currently in early alpha. During this period, usage is free.
+Current plans and rates are on the [Lark pricing page](https://lark.sh/pricing). This page explains what you're actually billed for: how bandwidth, storage, and volatile bandwidth are measured.
 
-<Info>Have questions about pricing or want early access? Reach out at [team@lark.sh](mailto:team@lark.sh).</Info>
+## The model
+
+Lark Cloud is a flat monthly base price that includes an allotment of storage and bandwidth. Go past the included amounts and usage is metered per GB. There are no per-operation charges, no per-seat charges, and no charge for concurrent connections.
+
+Self-hosting is free. Lark is [open source](/open-source) under AGPL v3, with no usage limits.
+
+## Bandwidth
+
+Bandwidth is **outbound traffic only**: the bytes Lark sends down to your clients. That includes query results, subscription events, and REST API responses. Uploads (your writes) are free.
+
+Because every subscriber receives a copy of each event, fan-out is what drives bandwidth. A 1 KB write to a path with 100 subscribers sends roughly 100 KB of egress, not 1 KB. Lark's delta-based [subscriptions](/platform/subscriptions) keep this efficient by sending only what changed, not the full value.
+
+## Storage
+
+Storage is your database's on-disk size, sampled daily and billed per GB-month. Storing 10 GB for three days costs a fraction of storing 10 GB all month. Deleting data lowers your bill from the next daily sample onward.
+
+## Volatile bandwidth
+
+Egress from [volatile paths](/platform/volatile) (fire-and-forget data like cursors, positions, and game state) is billed at 1/5th the standard bandwidth rate. 10 GB of volatile egress counts as 2 GB against your bandwidth usage.
+
+This discount is why Lark works for high-frequency multiplayer sync. A game streaming 20Hz position updates to every player generates a lot of egress, and volatile pricing keeps that affordable. Volatile data is also never persisted, so it doesn't count toward storage.
+
+## Concurrent connections
+
+Concurrent connections (CCU) are a plan limit, not a billed line item. You never pay per connection. If you're running 10k+ peak CCU, [get in touch](mailto:team@lark.sh) about an enterprise plan with volume discounts.
+
+## Tracking your usage
+
+Your project dashboard shows current bandwidth, storage, and CCU against your plan limits, with warnings as you approach them. See [Monitoring](/dashboard/monitoring) for details.
+
+<Info>Questions about pricing or billing? Reach out at [team@lark.sh](mailto:team@lark.sh).</Info>
